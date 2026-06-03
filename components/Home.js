@@ -38,7 +38,7 @@ export default function Home({ services, onPick }) {
         if (!list.length) return null;
         return (
           <div key={L}>
-            <h2>{laneLabel(L, lang, "full")}</h2>
+            <h2 className="sect">{laneLabel(L, lang, "full")}</h2>
             {list.map((g) => {
               const prices = g.opts.map((o) => o.price);
               const durs = g.opts.map((o) => o.dur);
