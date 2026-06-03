@@ -16,19 +16,30 @@ export default function AdminApp() {
   const [services, setServices] = useState([]);
   const [settings, setSettings] = useState(null);
 
+  const loadData = async () => {
+    setServices(await store.getServices());
+    setSettings(await store.getSettings());
+  };
+
   useEffect(() => {
+    let unsub = () => {};
     (async () => {
       await store.init();
-      setSettings(await store.getSettings());
-      setServices(await store.getServices());
-      setReady(true);
+      await loadData();
+      if (!USE_FB) { setReady(true); return; }
+      // Restore a persisted owner session (no re-login needed)
+      unsub = store.watchAuth(async (user) => {
+        if (user) { await store.ensureSeed(); await loadData(); setAuthed(true); }
+        else setAuthed(false);
+        setReady(true);
+      });
     })();
+    return () => unsub();
   }, []);
 
   const onSuccess = async () => {
     if (USE_FB) await store.ensureSeed();
-    setServices(await store.getServices());
-    setSettings(await store.getSettings());
+    await loadData();
     setAuthed(true);
   };
 

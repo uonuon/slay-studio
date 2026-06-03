@@ -47,24 +47,34 @@ export default function Dashboard({ services, settings, setServices, setSettings
   const setStatus = async (id, status) => { await store.setStatus(id, status); if (!USE_FB) refresh(); };
   const exit = async () => { await store.logout(); onExit(); };
 
-  const TABS = [
+  const PRIMARY = [
     ["sched", "🗓️", t("tabSchedule")],
     ["clients", "👥", t("tabClients")],
     ["money", "📊", t("tabMoney")],
-    ["setup", "⚙️", t("tabSetup")],
   ];
-  const title = (TABS.find((x) => x[0] === tab) || [])[2];
+  const MANAGE = [
+    ["services", "✂️", t("servicesPrices")],
+    ["availability", "🕑", t("availability")],
+    ["reviews", "⭐", t("reviews")],
+    ["settings", "⚙️", t("studioSettings")],
+  ];
+  const ALL = [...PRIMARY, ...MANAGE];
+  const title = (ALL.find((x) => x[0] === tab) || [])[2];
+
+  const navBtn = ([k, ic, lab]) => (
+    <button key={k} className={tab === k ? "on" : ""} onClick={() => setTab(k)}>
+      <span className="ic">{ic}</span>{lab}
+    </button>
+  );
 
   return (
     <div className="admin">
       <aside className="adside">
         <div className="adbrand">slay studio</div>
         <nav className="adnav">
-          {TABS.map(([k, ic, lab]) => (
-            <button key={k} className={tab === k ? "on" : ""} onClick={() => setTab(k)}>
-              <span className="ic">{ic}</span>{lab}
-            </button>
-          ))}
+          {PRIMARY.map(navBtn)}
+          <div className="adnav-label">{t("manageGroup")}</div>
+          {MANAGE.map(navBtn)}
         </nav>
         <button className="adside-exit" onClick={exit}><span className="ic">↩︎</span>{t("tabExit")}</button>
       </aside>
@@ -80,14 +90,15 @@ export default function Dashboard({ services, settings, setServices, setSettings
           )}
           {tab === "clients" && <Clients bookings={bookings} settings={settings} />}
           {tab === "money" && <Money bookings={bookings} settings={settings} />}
-          {tab === "setup" && (
-            <Setup services={services} settings={settings} setServices={setServices} setSettings={setSettings} />
-          )}
+          {tab === "services" && <ServicesPanel services={services} setServices={setServices} />}
+          {tab === "availability" && <AvailabilityPanel settings={settings} setSettings={setSettings} />}
+          {tab === "reviews" && <div className="panelcol"><ReviewsManager /></div>}
+          {tab === "settings" && <div className="panelcol"><StudioSettings settings={settings} setSettings={setSettings} /></div>}
         </div>
       </main>
 
       <div className="adbottom">
-        {TABS.map(([k, ic, lab]) => (
+        {ALL.map(([k, ic, lab]) => (
           <button key={k} className={"t" + (tab === k ? " on" : "")} onClick={() => setTab(k)}>
             <span className="ic">{ic}</span>{lab}
           </button>
@@ -161,45 +172,69 @@ function BookingCard({ b, settings, services = [], setStatus, onChanged }) {
 
 function Schedule({ bookings, settings, services, openAdd, setOpenAdd, setStatus, onAdded }) {
   const { lang, t } = useLang();
-  const today = bookings.filter((b) => b.date === todayStr() && b.status !== "cancelled").sort((x, y) => x.start.localeCompare(y.start));
-  const up = bookings.filter((b) => b.date > todayStr() && b.status !== "cancelled" && b.status !== "done").sort((x, y) => (x.date + x.start).localeCompare(y.date + y.start));
-  const past = bookings
-    .filter((b) => b.status === "done" || b.status === "cancelled" || (b.date < todayStr() && b.status !== "confirmed"))
-    .sort((x, y) => (y.date + y.start).localeCompare(x.date + x.start)).slice(0, 25);
+  const [month, setMonth] = useState(() => todayStr().slice(0, 7));
+  const [selected, setSelected] = useState(todayStr());
+
+  const byDate = useMemo(() => {
+    const m = {};
+    bookings.forEach((b) => { if (b.status !== "cancelled") (m[b.date] = m[b.date] || []).push(b); });
+    Object.values(m).forEach((a) => a.sort((x, y) => x.start.localeCompare(y.start)));
+    return m;
+  }, [bookings]);
+
+  const [y, mo] = month.split("-").map(Number);
+  const cells = useMemo(() => {
+    const startDow = new Date(y, mo - 1, 1).getDay();
+    const days = new Date(y, mo, 0).getDate();
+    const arr = [];
+    for (let i = 0; i < startDow; i++) arr.push(null);
+    for (let d = 1; d <= days; d++) arr.push(dstr(new Date(y, mo - 1, d)));
+    while (arr.length % 7) arr.push(null);
+    return arr;
+  }, [y, mo]);
+
+  const monthLabel = new Date(y, mo - 1, 1).toLocaleDateString(lang === "ar" ? "ar-EG" : "en-US", { month: "long", year: "numeric" });
+  const shift = (d) => setMonth(dstr(new Date(y, mo - 1 + d, 1)).slice(0, 7));
+  const goToday = () => { setMonth(todayStr().slice(0, 7)); setSelected(todayStr()); };
+  const dayList = byDate[selected] || [];
 
   return (
     <>
       <div className="panelcol">
-        <button className="ghost full" style={{ margin: "8px 0" }} onClick={() => setOpenAdd(!openAdd)}>{t("addBooking")}</button>
+        <button className="ghost full" style={{ margin: "4px 0 12px" }} onClick={() => setOpenAdd(!openAdd)}>{t("addBooking")}</button>
         {openAdd && <AddForm services={services} onAdded={() => { setOpenAdd(false); onAdded(); }} />}
       </div>
 
-      <h2 className="sect">{t("today")}</h2>
-      {today.length === 0
-        ? <div className="card"><div className="empty"><span className="big">☕</span>{t("noToday")}</div></div>
-        : <div className="cards">{today.map((b) => <BookingCard key={b.id} b={b} settings={settings} services={services} setStatus={setStatus} onChanged={onAdded} />)}</div>}
+      <div className="cal">
+        <div className="cal-head">
+          <button className="cal-nav" onClick={() => shift(-1)} aria-label="prev">‹</button>
+          <div className="cal-title">{monthLabel}</div>
+          <button className="cal-nav" onClick={() => shift(1)} aria-label="next">›</button>
+          <button className="cal-today" onClick={goToday}>{t("todayBtn")}</button>
+        </div>
+        <div className="cal-grid cal-dow">
+          {[0, 1, 2, 3, 4, 5, 6].map((i) => <div key={i} className="cal-dowc">{dayShort(i, lang)}</div>)}
+        </div>
+        <div className="cal-grid">
+          {cells.map((d, i) => {
+            if (!d) return <div key={"e" + i} className="cal-cell empty" />;
+            const list = byDate[d] || [];
+            return (
+              <button key={d} className={"cal-cell" + (d === selected ? " sel" : "") + (d === todayStr() ? " today" : "")} onClick={() => setSelected(d)}>
+                <span className="cal-d">{Number(d.slice(8))}</span>
+                {list.length > 0 && (
+                  <span className="cal-dots">{list.slice(0, 4).map((b) => <i key={b.id} className={"cdot b-" + b.status} />)}</span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
-      <h2 className="sect">{t("upcoming")}</h2>
-      {up.length === 0
-        ? <div className="card"><div className="empty"><span className="big">🗓️</span>{t("noUpcoming")}</div></div>
-        : <div className="cards">{up.map((b) => <BookingCard key={b.id} b={b} settings={settings} services={services} setStatus={setStatus} onChanged={onAdded} />)}</div>}
-
-      {past.length > 0 && (
-        <Collapse title={t("history", { n: past.length })}>
-          {past.map((b) => (
-            <div key={b.id} className={"bk bk-" + b.status} style={{ opacity: 0.8 }}>
-              <div className="top">
-                <div>
-                  <div className="when">{fmtDateL(b.date, lang)} · {b.start}</div>
-                  <div className="svcn">{tName(b.serviceName, lang)}</div>
-                  <div className="meta">{b.clientName} · {b.price.toLocaleString()} {t("egp")}</div>
-                </div>
-                <span className={"badge b-" + b.status}>{t("st_" + b.status)}</span>
-              </div>
-            </div>
-          ))}
-        </Collapse>
-      )}
+      <h2 className="sect">{fmtDateL(selected, lang)}</h2>
+      {dayList.length === 0
+        ? <div className="card"><div className="empty"><span className="big">🗓️</span>{t("noDay")}</div></div>
+        : <div className="cards">{dayList.map((b) => <BookingCard key={b.id} b={b} settings={settings} services={services} setStatus={setStatus} onChanged={onAdded} />)}</div>}
     </>
   );
 }
@@ -281,7 +316,7 @@ function Money({ bookings, settings }) {
   );
 }
 
-function Setup({ services, settings, setServices, setSettings }) {
+function AvailabilityPanel({ settings, setSettings }) {
   const { lang, t } = useLang();
   const [days, setDays] = useState([...settings.workDays]);
   const [open, setOpen] = useState(settings.openTime);
@@ -295,7 +330,6 @@ function Setup({ services, settings, setServices, setSettings }) {
 
   return (
     <div className="panelcol">
-      <h2 className="sect">{t("availability")}</h2>
       <div className="card glass">
         <label>{t("workingDays")}</label>
         <div className="days">
@@ -312,21 +346,15 @@ function Setup({ services, settings, setServices, setSettings }) {
         <input value={step} onChange={(e) => setStep(e.target.value)} />
         <button className="pink full" style={{ marginTop: 12 }} onClick={saveAvail}>{t("saveAvailability")}</button>
       </div>
+    </div>
+  );
+}
 
-      <Collapse title={t("servicesPrices")}>
-        {services.map((s) => (
-          <ServiceRow key={s.id} s={s} setServices={setServices} />
-        ))}
-        <AddService services={services} setServices={setServices} />
-      </Collapse>
-
-      <Collapse title={t("reviews")}>
-        <ReviewsManager />
-      </Collapse>
-
-      <Collapse title={t("studioSettings")}>
-        <StudioSettings settings={settings} setSettings={setSettings} />
-      </Collapse>
+function ServicesPanel({ services, setServices }) {
+  return (
+    <div className="panelcol">
+      {services.map((s) => <ServiceRow key={s.id} s={s} setServices={setServices} />)}
+      <AddService services={services} setServices={setServices} />
     </div>
   );
 }
