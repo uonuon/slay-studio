@@ -2,14 +2,15 @@
 import { useEffect, useState } from "react";
 import { store } from "@/lib/store";
 import { firstWorkingDay } from "@/lib/util";
-import { useLang } from "@/lib/i18n";
+import { useLang, tName } from "@/lib/i18n";
 import Hero from "./Hero";
+import TopBar from "./TopBar";
 import Home from "./Home";
 import Booking from "./Booking";
 import Confirm from "./Confirm";
 
 export default function App() {
-  const { t } = useLang();
+  const { lang, t } = useLang();
   const [ready, setReady] = useState(false);
   const [view, setView] = useState("home");
   const [services, setServices] = useState([]);
@@ -50,7 +51,9 @@ export default function App() {
 
   return (
     <div className="wrap">
-      <Hero />
+      {view === "home" && <Hero />}
+      {view === "book" && <TopBar title={sel.family ? tName(sel.family.group, lang) : ""} onBack={() => setView("home")} />}
+      {view === "confirm" && <TopBar onBack={() => setView("home")} />}
       <div className="viewfade" key={view}>
         {view === "home" && <Home services={services} onPick={goBook} />}
         {view === "book" && (
@@ -66,7 +69,7 @@ export default function App() {
           <Confirm booking={sel.booking} settings={settings} onHome={() => setView("home")} />
         )}
       </div>
-      <div className="foot">slay studio · <b>@braids.bymarmora</b></div>
+      {view === "home" && <div className="foot">slay studio · <b>@braids.bymarmora</b></div>}
     </div>
   );
 }

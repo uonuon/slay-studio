@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { USE_FB } from "@/lib/firebase";
 import { store } from "@/lib/store";
-import { todayStr, dstr, uid, waLink, toast, families, fileToDataURL } from "@/lib/util";
+import { todayStr, dstr, uid, waLink, toast, groupKey, fileToDataURL } from "@/lib/util";
 import { useLang, fmtDateL, tName, dayShort } from "@/lib/i18n";
 import Hero from "./Hero";
 
@@ -244,11 +244,7 @@ function Setup({ services, settings, setServices, setSettings }) {
         {services.map((s) => (
           <ServiceRow key={s.id} s={s} setServices={setServices} />
         ))}
-        <AddService setServices={setServices} />
-      </Collapse>
-
-      <Collapse title={t("stylePhotos")}>
-        <StylePhotos services={services} setServices={setServices} />
+        <AddService services={services} setServices={setServices} />
       </Collapse>
 
       <Collapse title={t("studioSettings")}>
@@ -260,33 +256,88 @@ function Setup({ services, settings, setServices, setSettings }) {
 
 function ServiceRow({ s, setServices }) {
   const { lang, t } = useLang();
+  const inputRef = useRef(null);
+  const [group, setGroup] = useState(groupKey(s));
+  const [name, setName] = useState(s.name);
   const [price, setPrice] = useState(s.price);
   const [dur, setDur] = useState(s.dur);
+  const [busy, setBusy] = useState(false);
+  const img = s.img;
+
+  const save = async () => {
+    await store.saveService({ ...s, group: group.trim(), name: name.trim(), price: +price, dur: +dur });
+    setServices(await store.getServices()); toast(t("saved"));
+  };
+  const onPhoto = async (e) => {
+    const file = e.target.files?.[0]; e.target.value = "";
+    if (!file) return; setBusy(true);
+    try { const url = await fileToDataURL(file); await store.saveService({ ...s, img: url }); setServices(await store.getServices()); toast(t("photoSaved")); }
+    catch (err) { toast("⚠︎"); }
+    setBusy(false);
+  };
+  const rmPhoto = async () => { await store.saveService({ ...s, img: "" }); setServices(await store.getServices()); toast(t("photoRemoved")); };
+
   return (
     <div className="card" style={{ margin: "8px 0", background: "var(--card-2)" }}>
-      <div className="svcn" style={{ color: "#fff", marginBottom: 8 }}>{tName(s.name, lang)}</div>
-      <div className="row2">
+      <div style={{ display: "flex", gap: 12, alignItems: "flex-end" }}>
+        {img
+          ? <div className="thumb img" style={{ backgroundImage: `url(${img})`, width: 56, height: 56, flex: "0 0 56px" }} />
+          : <div className="thumb" style={{ background: "rgba(255,255,255,.06)", width: 56, height: 56, flex: "0 0 56px", fontSize: 22 }}>📷</div>}
+        <div style={{ flex: 1 }}>
+          <label>{t("category")}</label>
+          <input value={group} onChange={(e) => setGroup(e.target.value)} />
+        </div>
+      </div>
+      <label style={{ marginTop: 10, display: "block" }}>{t("styleName")}</label>
+      <input value={name} onChange={(e) => setName(e.target.value)} />
+      <div className="row2" style={{ marginTop: 10 }}>
         <div><label>{t("priceLab")}</label><input value={price} onChange={(e) => setPrice(e.target.value)} /></div>
         <div><label>{t("minLab")}</label><input value={dur} onChange={(e) => setDur(e.target.value)} /></div>
       </div>
+      <input ref={inputRef} type="file" accept="image/*" onChange={onPhoto} style={{ display: "none" }} />
       <div className="acts">
-        <button className="pink sm" onClick={async () => { await store.saveService({ ...s, price: +price, dur: +dur }); setServices(await store.getServices()); toast(t("saved")); }}>{t("save")}</button>
+        <button className="pink sm" onClick={save}>{t("save")}</button>
+        <button className="ghost sm" disabled={busy} onClick={() => inputRef.current?.click()}>{img ? t("changePhoto") : t("addPhoto")}</button>
+        {img && <button className="ghost sm" disabled={busy} onClick={rmPhoto}>{t("removePhoto")}</button>}
         <button className="danger sm" onClick={async () => { if (confirm(t("removeQ", { x: tName(s.name, lang) }))) { await store.delService(s.id); setServices(await store.getServices()); } }}>{t("remove")}</button>
       </div>
     </div>
   );
 }
 
-function AddService({ setServices }) {
-  const { lang, t } = useLang();
+function AddService({ services, setServices }) {
+  const { t } = useLang();
+  const inputRef = useRef(null);
+  const [lane, setLane] = useState("Slay Studio");
+  const [group, setGroup] = useState("");
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
   const [dur, setDur] = useState("");
-  const [lane, setLane] = useState("Slay Studio");
+  const [img, setImg] = useState("");
+  const [busy, setBusy] = useState(false);
+  const existing = [...new Set(services.map(groupKey))];
+
+  const onPhoto = async (e) => {
+    const file = e.target.files?.[0]; e.target.value = "";
+    if (!file) return; setBusy(true);
+    try { setImg(await fileToDataURL(file)); } catch (err) { toast("⚠︎"); }
+    setBusy(false);
+  };
+  const add = async () => {
+    if (!group.trim() || !name.trim() || !price) return toast(t("catNamePrice"));
+    await store.addService({ id: uid(), lane, group: group.trim(), name: name.trim(), price: +price, dur: +dur || 120, img });
+    setServices(await store.getServices());
+    setGroup(""); setName(""); setPrice(""); setDur(""); setImg("");
+  };
+
   return (
     <div className="card" style={{ margin: "8px 0", background: "var(--card-2)" }}>
       <div className="svcn" style={{ color: "#fff", marginBottom: 8 }}>{t("addServiceTitle")}</div>
-      <input value={name} onChange={(e) => setName(e.target.value)} placeholder={t("serviceNamePh")} />
+      <label>{t("category")}</label>
+      <input list="ss-groups" value={group} onChange={(e) => setGroup(e.target.value)} placeholder={t("categoryPh")} />
+      <datalist id="ss-groups">{existing.map((g) => <option key={g} value={g} />)}</datalist>
+      <label style={{ marginTop: 10, display: "block" }}>{t("styleName")}</label>
+      <input value={name} onChange={(e) => setName(e.target.value)} placeholder={t("styleNamePh")} />
       <div className="row2" style={{ marginTop: 8 }}>
         <input value={price} onChange={(e) => setPrice(e.target.value)} placeholder={t("pricePh")} />
         <input value={dur} onChange={(e) => setDur(e.target.value)} placeholder={t("minutesPh")} />
@@ -296,72 +347,12 @@ function AddService({ setServices }) {
         <option value="Little Slays">Little Slays</option>
         <option value="Signature">Signature</option>
       </select>
-      <button className="pink full" style={{ marginTop: 10 }} onClick={async () => {
-        if (!name || !price) return toast(t("nameAndPrice"));
-        await store.addService({ id: uid(), lane, name, price: +price, dur: +dur || 120 });
-        setServices(await store.getServices());
-        setName(""); setPrice(""); setDur("");
-      }}>{t("addBtn")}</button>
-    </div>
-  );
-}
-
-function StylePhotos({ services, setServices }) {
-  const { lang, t } = useLang();
-  const fams = families(services);
-
-  const setFamilyImg = async (famName, img) => {
-    const all = await store.getServices();
-    for (const x of all) if (x.name.split(" · ")[0] === famName) await store.saveService({ ...x, img });
-    setServices(await store.getServices());
-  };
-
-  return (
-    <>
-      <small className="note" style={{ marginBottom: 6 }}>{t("photoNote")}</small>
-      {fams.map((f) => (
-        <PhotoRow key={f.name} fam={f} lang={lang} t={t} onSet={setFamilyImg} />
-      ))}
-    </>
-  );
-}
-
-function PhotoRow({ fam, lang, t, onSet }) {
-  const inputRef = useRef(null);
-  const [busy, setBusy] = useState(false);
-  const img = fam.opts.find((o) => o.img)?.img;
-
-  const pick = async (e) => {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file) return;
-    setBusy(true);
-    try {
-      const url = await fileToDataURL(file);
-      await onSet(fam.name, url);
-      toast(t("photoSaved"));
-    } catch (err) {
-      toast("⚠︎");
-    }
-    setBusy(false);
-  };
-
-  return (
-    <div className="card" style={{ margin: "8px 0", background: "var(--card-2)" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        {img
-          ? <div className="thumb img" style={{ backgroundImage: `url(${img})`, width: 56, height: 56, flex: "0 0 56px" }} />
-          : <div className="thumb" style={{ background: "rgba(255,255,255,.06)", width: 56, height: 56, flex: "0 0 56px", fontSize: 22 }}>📷</div>}
-        <div style={{ flex: 1 }}>
-          <div className="svcn" style={{ color: "#fff" }}>{tName(fam.name, lang)}</div>
-          <div className="meta" style={{ fontSize: 11.5, color: "var(--muted)" }}>{img ? "" : t("noPhoto")}</div>
-        </div>
+      <input ref={inputRef} type="file" accept="image/*" onChange={onPhoto} style={{ display: "none" }} />
+      <div className="acts" style={{ marginTop: 10, alignItems: "center" }}>
+        <button className="ghost sm" disabled={busy} onClick={() => inputRef.current?.click()}>{img ? t("changePhoto") : t("addPhoto")}</button>
+        {img && <div className="thumb img" style={{ backgroundImage: `url(${img})`, width: 40, height: 40, flex: "0 0 40px" }} />}
       </div>
-      <input ref={inputRef} type="file" accept="image/*" onChange={pick} style={{ display: "none" }} />
-      <div className="acts">
-        <button className="pink sm" disabled={busy} onClick={() => inputRef.current?.click()}>{img ? t("changePhoto") : t("uploadPhoto")}</button>
-        {img && <button className="danger sm" disabled={busy} onClick={async () => { await onSet(fam.name, ""); toast(t("photoRemoved")); }}>{t("removePhoto")}</button>}
-      </div>
+      <button className="pink full" style={{ marginTop: 10 }} onClick={add}>{t("addBtn")}</button>
     </div>
   );
 }

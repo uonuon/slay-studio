@@ -3,12 +3,12 @@ import { useEffect, useMemo, useState } from "react";
 import { LANE_META } from "@/lib/config";
 import { store } from "@/lib/store";
 import { availableStarts, dstr, hrs, t2m, todayStr, uid, toast } from "@/lib/util";
-import { useLang, tName, tSize, dayShort } from "@/lib/i18n";
+import { useLang, tVariant, dayShort } from "@/lib/i18n";
 
 export default function Booking({ sel, setSel, settings, onBack, onBooked }) {
   const { lang, t } = useLang();
-  const family = sel.family;
-  const familyImg = family.opts.find((o) => o.img)?.img;
+  const group = sel.family; // category object: { group, lane, opts: [{...service, variant}] }
+  const groupImg = group.opts.find((o) => o.img)?.img;
   const [service, setService] = useState(sel.service || null);
   const [date, setDate] = useState(sel.date || todayStr());
   const [starts, setStarts] = useState([]);
@@ -50,11 +50,11 @@ export default function Booking({ sel, setSel, settings, onBack, onBooked }) {
       date, start, clientName: name.trim(), clientPhone: phone.trim(), status: "pending", createdAt: Date.now(),
     };
     // Persist without the (heavy) image; pass it to the confirm screen in memory only.
-    try { await store.createBooking(b); onBooked({ ...b, img: service.img || familyImg || "" }); }
+    try { await store.createBooking(b); onBooked({ ...b, img: service.img || groupImg || "" }); }
     catch (e) { toast(t("slotTaken")); setStart(null); }
   };
 
-  const styleImg = service?.img || familyImg;
+  const styleImg = service?.img || groupImg;
 
   const groups = [
     [t("morning"), (tm) => t2m(tm) < 720],
@@ -64,25 +64,23 @@ export default function Booking({ sel, setSel, settings, onBack, onBooked }) {
 
   return (
     <>
-      <button className="link" onClick={onBack}>{t("allStyles")}</button>
       <div className="steps">
         <span className="s">{t("stStyle")}</span><span className="ln" /><span className="s on">{t("stTime")}</span><span className="ln" /><span className="s">{t("stYou")}</span>
       </div>
-      <h2>{tName(family.name, lang)}</h2>
 
       {styleImg && <div className="styleimg" style={{ backgroundImage: `url(${styleImg})` }} />}
 
-      {family.opts.length > 1 && (
+      {group.opts.length > 1 && (
         <div className="card">
           <label>{t("chooseSize")}</label>
           <div className="chips">
-            {family.opts.map((o) => (
+            {group.opts.map((o) => (
               <div
                 key={o.id}
                 className={"chip" + (service && service.id === o.id ? " on" : "")}
                 onClick={() => { setService(o); setSel((s) => ({ ...s, service: o })); }}
               >
-                <div className="cs">{tSize(o.size, lang) || tName(o.name, lang)}</div>
+                <div className="cs">{tVariant(o, lang)}</div>
                 <div className="cp">{o.price.toLocaleString()} · {hrs(o.dur)}h</div>
               </div>
             ))}
@@ -97,9 +95,9 @@ export default function Booking({ sel, setSel, settings, onBack, onBooked }) {
           <div className="summary" style={{ margin: "13px 0" }}>
             <div>
               <div className="when">{service.price.toLocaleString()} {t("egp")}</div>
-              <div className="svcn">{service.size ? tSize(service.size, lang) + " · " : ""}{t("aboutHours", { n: hrs(service.dur) })}</div>
+              <div className="svcn">{tVariant(service, lang)} · {t("aboutHours", { n: hrs(service.dur) })}</div>
             </div>
-            <div className="amt">{LANE_META[service.lane].emoji}</div>
+            <div className="amt">{LANE_META[service.lane]?.emoji || "✨"}</div>
           </div>
 
           <div className="card glass">

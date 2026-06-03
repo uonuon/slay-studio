@@ -1,24 +1,26 @@
 "use client";
 import { useState } from "react";
 import { LANE_META, LANES } from "@/lib/config";
-import { families, hrs } from "@/lib/util";
+import { groupStyles, hrs } from "@/lib/util";
 import { useLang, laneLabel, tName } from "@/lib/i18n";
 
 export default function Home({ services, onPick }) {
   const { lang, t } = useLang();
   const [filter, setFilter] = useState("all");
-  const fams = families(services);
+  const grps = groupStyles(services);
 
   return (
     <>
       <p className="lead">{t("lead")}</p>
 
-      <div className="seg">
-        {[["all", t("all")], ...LANES.map((l) => [l, laneLabel(l, lang, "short")])].map(([k, lab]) => (
-          <button key={k} className={filter === k ? "on" : ""} onClick={() => setFilter(k)}>
-            {lab}
-          </button>
-        ))}
+      <div className="segwrap">
+        <div className="seg">
+          {[["all", t("all")], ...LANES.map((l) => [l, laneLabel(l, lang, "short")])].map(([k, lab]) => (
+            <button key={k} className={filter === k ? "on" : ""} onClick={() => setFilter(k)}>
+              {lab}
+            </button>
+          ))}
+        </div>
       </div>
 
       {!services.length && (
@@ -32,33 +34,33 @@ export default function Home({ services, onPick }) {
 
       {LANES.map((L) => {
         if (filter !== "all" && filter !== L) return null;
-        const list = fams.filter((f) => f.lane === L);
+        const list = grps.filter((g) => g.lane === L);
         if (!list.length) return null;
         return (
           <div key={L}>
             <h2>{laneLabel(L, lang, "full")}</h2>
-            {list.map((f) => {
-              const prices = f.opts.map((o) => o.price);
-              const durs = f.opts.map((o) => o.dur);
-              const img = f.opts.find((o) => o.img)?.img;
-              const pr =
-                Math.min(...prices) === Math.max(...prices)
-                  ? prices[0].toLocaleString()
-                  : Math.min(...prices).toLocaleString() + "–" + Math.max(...prices).toLocaleString();
-              const dr =
-                Math.min(...durs) === Math.max(...durs)
-                  ? t("aboutHrs", { n: hrs(durs[0]) })
-                  : t("aboutHrsRange", { a: hrs(Math.min(...durs)), b: hrs(Math.max(...durs)) });
+            {list.map((g) => {
+              const prices = g.opts.map((o) => o.price);
+              const durs = g.opts.map((o) => o.dur);
+              const img = g.opts.find((o) => o.img)?.img;
+              const lo = Math.min(...prices), hi = Math.max(...prices);
+              const pr = lo === hi ? lo.toLocaleString() : lo.toLocaleString() + "+";
+              const sub =
+                g.opts.length > 1
+                  ? t("stylesN", { n: g.opts.length })
+                  : Math.min(...durs) === Math.max(...durs)
+                    ? t("aboutHrs", { n: hrs(durs[0]) })
+                    : t("aboutHrsRange", { a: hrs(Math.min(...durs)), b: hrs(Math.max(...durs)) });
               return (
-                <div key={f.name} className="svc" onClick={() => onPick(f)}>
+                <div key={g.group} className="svc" onClick={() => onPick(g)}>
                   {img ? (
                     <div className="thumb img" style={{ backgroundImage: `url(${img})` }} />
                   ) : (
                     <div className="thumb" style={{ background: LANE_META[L].grad }}>{LANE_META[L].emoji}</div>
                   )}
                   <div>
-                    <div className="n">{tName(f.name, lang)}</div>
-                    <div className="d">{dr}{f.opts.length > 1 ? " · " + t("sizesN", { n: f.opts.length }) : ""}</div>
+                    <div className="n">{tName(g.group, lang)}</div>
+                    <div className="d">{sub}</div>
                   </div>
                   <div className="p">
                     <div className="amt">{pr}</div>

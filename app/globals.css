@@ -47,6 +47,16 @@ body{
 .langtoggle{display:flex;justify-content:center;gap:6px;margin-bottom:10px;}
 .langtoggle button{background:var(--card-2);border:1px solid var(--line);color:var(--muted);font-size:13px;font-weight:600;padding:6px 14px;border-radius:20px;min-width:54px;}
 .langtoggle button.on{background:linear-gradient(135deg,var(--pink),var(--pink-2));color:#241a1e;border-color:transparent;}
+/* sticky app-style top bar on inner screens */
+.topbar{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:10px;padding:calc(12px + env(safe-area-inset-top)) 2px 12px;margin:0 0 4px;background:rgba(11,9,9,.72);backdrop-filter:blur(16px);}
+.tb-back{background:var(--card-2);border:1px solid var(--line);color:#fff;width:42px;height:42px;border-radius:50%;font-size:24px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center;flex:0 0 42px;}
+[dir="rtl"] .tb-back{transform:scaleX(-1);}
+.tb-title{font-family:var(--serif);font-style:italic;font-size:21px;color:#fff;flex:1;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 4px;}
+[dir="rtl"] .tb-title{font-style:normal;}
+.langtoggle.sm{margin:0;}
+.langtoggle.sm button{min-width:38px;padding:7px 9px;font-size:12.5px;}
+/* sticky category tabs on home */
+.segwrap{position:sticky;top:0;z-index:20;background:linear-gradient(180deg,rgba(11,9,9,.97),rgba(11,9,9,.84));backdrop-filter:blur(12px);padding:8px 0 6px;margin:0 -2px;}
 
 h2{font-family:var(--serif);font-style:italic;font-weight:500;color:#fff;font-size:25px;margin:28px 4px 2px;letter-spacing:-.2px;}
 .lead{font-size:15.5px;font-weight:300;color:var(--muted);text-align:center;margin:8px 10px 18px;}
