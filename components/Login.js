@@ -24,7 +24,15 @@ export default function Login({ onBack, onSuccess }) {
   return (
     <>
       <button className="link" onClick={onBack}>{t("back")}</button>
-      <h2>{t("ownerLogin")}</h2>
+      <div className="login-head">
+        <div className="login-badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="4.5" y="10.5" width="15" height="10" rx="2.5" />
+            <path d="M8 10.5V7a4 4 0 0 1 8 0v3.5" />
+          </svg>
+        </div>
+        <h2 style={{ textAlign: "center", margin: "12px 0 0" }}>{t("ownerLogin")}</h2>
+      </div>
       <div className="card glass">
         {USE_FB ? (
           <>
