@@ -1,8 +1,8 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { USE_FB } from "@/lib/firebase";
 import { store } from "@/lib/store";
-import { todayStr, dstr, uid, waLink, toast, groupKey, fileToDataURL } from "@/lib/util";
+import { todayStr, dstr, uid, waLink, toast, groupKey, normPhone, fileToDataURL } from "@/lib/util";
 import { useLang, fmtDateL, tName, dayShort } from "@/lib/i18n";
 import Hero from "./Hero";
 
@@ -43,13 +43,14 @@ export default function Dashboard({ services, settings, setServices, setSettings
       {tab === "sched" && (
         <Schedule bookings={bookings} settings={settings} services={services} openAdd={openAdd} setOpenAdd={setOpenAdd} setStatus={setStatus} onAdded={refresh} />
       )}
+      {tab === "clients" && <Clients bookings={bookings} settings={settings} />}
       {tab === "money" && <Money bookings={bookings} settings={settings} />}
       {tab === "setup" && (
         <Setup services={services} settings={settings} setServices={setServices} setSettings={setSettings} />
       )}
 
       <div className="tabbar">
-        {[["sched", "🗓️", t("tabSchedule")], ["money", "📊", t("tabMoney")], ["setup", "⚙️", t("tabSetup")]].map(([k, ic, lab]) => (
+        {[["sched", "🗓️", t("tabSchedule")], ["clients", "👥", t("tabClients")], ["money", "📊", t("tabMoney")], ["setup", "⚙️", t("tabSetup")]].map(([k, ic, lab]) => (
           <button key={k} className={"t" + (tab === k ? " on" : "")} onClick={() => setTab(k)}>
             <span className="ic">{ic}</span>{lab}
           </button>
@@ -280,6 +281,10 @@ function Setup({ services, settings, setServices, setSettings }) {
         <AddService services={services} setServices={setServices} />
       </Collapse>
 
+      <Collapse title={t("reviews")}>
+        <ReviewsManager />
+      </Collapse>
+
       <Collapse title={t("studioSettings")}>
         <StudioSettings settings={settings} setSettings={setSettings} />
       </Collapse>
@@ -390,12 +395,167 @@ function AddService({ services, setServices }) {
   );
 }
 
+// ── Clients (CRM + rebooking follow-ups) ─────────────────────────────────
+function Clients({ bookings, settings }) {
+  const { lang, t } = useLang();
+  const [meta, setMeta] = useState({});
+  useEffect(() => { (async () => setMeta(await store.getClientMeta()))(); }, []);
+
+  const rebookWeeks = settings.rebookWeeks || 6;
+  const today = todayStr();
+
+  const clients = useMemo(() => {
+    const m = {};
+    bookings.forEach((b) => {
+      const key = normPhone(b.clientPhone || "");
+      if (!key) return;
+      if (!m[key]) m[key] = { key, phone: b.clientPhone, name: b.clientName, visits: 0, spent: 0, last: null, upcoming: false, history: [] };
+      const c = m[key];
+      if (b.clientName) c.name = b.clientName;
+      if (b.status !== "cancelled") c.history.push(b);
+      if (b.status === "done" || b.status === "confirmed") { c.visits++; c.spent += b.price; }
+      if (b.status === "done" && (!c.last || b.date > c.last)) c.last = b.date;
+      if (b.date >= today && b.status !== "cancelled" && b.status !== "done") c.upcoming = true;
+    });
+    const arr = Object.values(m);
+    arr.forEach((c) => {
+      c.history.sort((x, y) => (y.date + y.start).localeCompare(x.date + x.start));
+      const weeks = c.last ? (new Date(today) - new Date(c.last)) / (7 * 864e5) : 0;
+      c.due = !!c.last && weeks >= rebookWeeks && !c.upcoming;
+    });
+    arr.sort((a, b) => (b.due - a.due) || ((b.last || "") > (a.last || "") ? 1 : -1));
+    return arr;
+  }, [bookings, rebookWeeks, today]);
+
+  const due = clients.filter((c) => c.due);
+
+  const saveNote = async (key, name, notes) => {
+    await store.saveClientMeta(key, { name, notes });
+    setMeta((m) => ({ ...m, [key]: { ...(m[key] || {}), name, notes } }));
+    toast(t("saved"));
+  };
+
+  if (!clients.length) return <div className="card"><div className="empty"><span className="big">👥</span>{t("noClients")}</div></div>;
+
+  const renderCard = (c) => <ClientCard key={c.key} c={c} note={meta[c.key]} onSave={saveNote} lang={lang} t={t} />;
+
+  return (
+    <>
+      {due.length > 0 && <h2 className="sect">{t("clientsDue", { n: due.length })}</h2>}
+      {due.map(renderCard)}
+      <h2 className="sect">{t("clientsAll", { n: clients.length })}</h2>
+      {clients.filter((c) => !c.due).map(renderCard)}
+    </>
+  );
+}
+
+function ClientCard({ c, note, onSave, lang, t }) {
+  const [notes, setNotes] = useState(note?.notes || "");
+  const [open, setOpen] = useState(false);
+  useEffect(() => { setNotes(note?.notes || ""); }, [note]);
+  const refresh = t("waRefresh", { name: c.name });
+  return (
+    <div className={"bk" + (c.due ? " bk-pending" : "")}>
+      <div className="top">
+        <div>
+          <div className="when">{c.name}</div>
+          <div className="meta">{c.phone}</div>
+          <div className="meta">
+            {c.visits ? (c.visits === 1 ? t("oneVisit") : t("visitsN", { n: c.visits })) : "—"}
+            {c.last ? " · " + t("lastVisit", { d: fmtDateL(c.last, lang) }) : ""}
+            {c.spent ? " · " + t("spentTotal", { n: c.spent.toLocaleString() }) : ""}
+          </div>
+        </div>
+        {c.due ? <span className="badge b-pending">{t("dueRefresh")}</span>
+          : c.upcoming ? <span className="badge b-confirmed">{t("hasUpcoming")}</span> : null}
+      </div>
+
+      <label style={{ marginTop: 12, display: "block" }}>{t("hairNotes")}</label>
+      <textarea className="ta" rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder={t("hairNotesPh")} />
+
+      <div className="acts">
+        <button className="pink sm" onClick={() => onSave(c.key, c.name, notes)}>{t("save")}</button>
+        <a className="btn wa sm" href={waLink(c.phone, refresh)} target="_blank" rel="noopener noreferrer">{t("sendRefresh")}</a>
+        {c.history.length > 0 && <button className="ghost sm" onClick={() => setOpen((v) => !v)}>{c.history.length} ⌄</button>}
+      </div>
+
+      {open && (
+        <div style={{ marginTop: 8 }}>
+          {c.history.map((b) => (
+            <div key={b.id} className="meta" style={{ padding: "5px 0", borderTop: "1px solid var(--line)" }}>
+              {fmtDateL(b.date, lang)} · {tName(b.serviceName, lang)} · {b.price.toLocaleString()} {t("egp")}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Reviews (owner-posted testimonials) ──────────────────────────────────
+function Stars({ value, onChange, size = 22 }) {
+  return (
+    <div className="stars" style={{ fontSize: size }}>
+      {[1, 2, 3, 4, 5].map((n) => (
+        <span key={n} className={n <= value ? "on" : ""} onClick={onChange ? () => onChange(n) : undefined}
+          style={{ cursor: onChange ? "pointer" : "default" }}>★</span>
+      ))}
+    </div>
+  );
+}
+
+function ReviewsManager() {
+  const { t } = useLang();
+  const [list, setList] = useState([]);
+  const [name, setName] = useState("");
+  const [rating, setRating] = useState(5);
+  const [text, setText] = useState("");
+  const load = async () => setList(await store.listReviews());
+  useEffect(() => { load(); }, []);
+
+  const post = async () => {
+    if (!name.trim() || !text.trim()) return toast(t("reviewNeed"));
+    await store.saveReview({ id: uid(), name: name.trim(), rating, text: text.trim(), createdAt: Date.now() });
+    setName(""); setText(""); setRating(5); load(); toast(t("saved"));
+  };
+
+  const sorted = [...list].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+  return (
+    <>
+      <div className="card" style={{ margin: "8px 0", background: "var(--card-2)" }}>
+        <div className="svcn" style={{ color: "#fff", marginBottom: 8 }}>{t("addReview")}</div>
+        <label>{t("reviewerName")}</label>
+        <input value={name} onChange={(e) => setName(e.target.value)} />
+        <label style={{ marginTop: 10, display: "block" }}>{t("rating")}</label>
+        <Stars value={rating} onChange={setRating} />
+        <label style={{ marginTop: 10, display: "block" }}>{t("reviewText")}</label>
+        <textarea className="ta" rows={2} value={text} onChange={(e) => setText(e.target.value)} placeholder={t("reviewTextPh")} />
+        <button className="pink full" style={{ marginTop: 10 }} onClick={post}>{t("postReview")}</button>
+      </div>
+      {sorted.map((r) => (
+        <div key={r.id} className="card" style={{ margin: "8px 0", background: "var(--card-2)" }}>
+          <div className="top" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+            <div>
+              <Stars value={r.rating} size={15} />
+              <div className="svcn" style={{ color: "#fff", marginTop: 4 }}>{r.name}</div>
+            </div>
+            <button className="danger sm" onClick={async () => { await store.delReview(r.id); load(); }}>{t("remove")}</button>
+          </div>
+          <div className="meta" style={{ marginTop: 6 }}>{r.text}</div>
+        </div>
+      ))}
+    </>
+  );
+}
+
 function StudioSettings({ settings, setSettings }) {
   const { t } = useLang();
   const [wa, setWa] = useState(settings.whatsapp);
   const [ip, setIp] = useState(settings.instapay);
   const [dp, setDp] = useState(settings.depositPct);
   const [rt, setRt] = useState(settings.rent);
+  const [rw, setRw] = useState(settings.rebookWeeks ?? 6);
   return (
     <div>
       <label>{t("waCC")}</label>
@@ -406,8 +566,10 @@ function StudioSettings({ settings, setSettings }) {
         <div><label>{t("depositPct")}</label><input value={dp} onChange={(e) => setDp(e.target.value)} /></div>
         <div><label>{t("monthlyRent")}</label><input value={rt} onChange={(e) => setRt(e.target.value)} /></div>
       </div>
+      <label style={{ marginTop: 10, display: "block" }}>{t("rebookWeeks")}</label>
+      <input value={rw} onChange={(e) => setRw(e.target.value)} />
       <button className="pink full" style={{ marginTop: 12 }} onClick={async () => {
-        const ns = { ...settings, whatsapp: wa, instapay: ip, depositPct: +dp, rent: +rt };
+        const ns = { ...settings, whatsapp: wa, instapay: ip, depositPct: +dp, rent: +rt, rebookWeeks: +rw || 6 };
         await store.saveSettings(ns); setSettings(ns); toast(t("saved"));
       }}>{t("saveSettings")}</button>
     </div>

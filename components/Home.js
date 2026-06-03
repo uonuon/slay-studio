@@ -1,13 +1,39 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { LANE_META, LANES } from "@/lib/config";
 import { groupStyles, hrs } from "@/lib/util";
+import { store } from "@/lib/store";
 import { useLang, laneLabel, tName } from "@/lib/i18n";
+
+function reviewJsonLd(reviews) {
+  const count = reviews.length;
+  const avg = count ? reviews.reduce((s, r) => s + (r.rating || 0), 0) / count : 0;
+  return {
+    "@context": "https://schema.org",
+    "@type": "HairSalon",
+    name: "Slay Studio",
+    url: "https://slay-studio.com",
+    aggregateRating: { "@type": "AggregateRating", ratingValue: avg.toFixed(1), reviewCount: count, bestRating: 5 },
+    review: reviews.slice(0, 20).map((r) => ({
+      "@type": "Review",
+      author: { "@type": "Person", name: r.name },
+      reviewRating: { "@type": "Rating", ratingValue: r.rating, bestRating: 5 },
+      reviewBody: r.text,
+    })),
+  };
+}
 
 export default function Home({ services, onPick }) {
   const { lang, t } = useLang();
   const [filter, setFilter] = useState("all");
+  const [reviews, setReviews] = useState([]);
   const grps = groupStyles(services);
+
+  useEffect(() => {
+    (async () => { try { setReviews(await store.listReviews()); } catch (e) {} })();
+  }, []);
+
+  const sortedReviews = [...reviews].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
 
   return (
     <>
@@ -73,6 +99,23 @@ export default function Home({ services, onPick }) {
           </div>
         );
       })}
+
+      {sortedReviews.length > 0 && (
+        <div className="testi">
+          <h2 className="sect">{t("reviewsHeading")}</h2>
+          {sortedReviews.map((r) => (
+            <div key={r.id} className="rev">
+              <div className="rev-stars">
+                <span className="on">{"★".repeat(Math.max(1, Math.min(5, r.rating)))}</span>
+                <span className="dim">{"★".repeat(5 - Math.max(1, Math.min(5, r.rating)))}</span>
+              </div>
+              <div className="rev-text">“{r.text}”</div>
+              <div className="rev-name">— {r.name}</div>
+            </div>
+          ))}
+          <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(reviewJsonLd(sortedReviews)) }} />
+        </div>
+      )}
     </>
   );
 }
