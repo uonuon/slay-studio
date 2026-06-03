@@ -138,15 +138,18 @@ textarea:focus,.ta:focus{border-color:rgba(232,166,188,.55);background:rgba(0,0,
 .stars span{color:var(--line);transition:.12s;}
 .stars span.on{color:#f0c860;}
 
-/* homepage testimonials */
+/* homepage testimonials — swipeable screenshot carousel */
 .testi{margin-top:6px;}
-.rev{border:1px solid var(--line);background:var(--card);border-radius:16px;padding:15px 16px;margin:11px 0;}
+.revstrip{display:flex;gap:14px;overflow-x:auto;scroll-snap-type:x mandatory;padding:4px 0 10px;margin:0 -16px;padding-inline:16px;}
+.revcard{flex:0 0 84%;max-width:340px;scroll-snap-align:center;}
+.revcard .rev-stars{margin-bottom:9px;}
+.revcard img{width:100%;border-radius:16px;border:1px solid var(--line);display:block;box-shadow:var(--shadow);background:var(--card-2);}
 .rev-stars{font-size:15px;letter-spacing:2px;}
 .rev-stars .on{color:#f0c860;}
 .rev-stars .dim{color:var(--line);}
-.rev-text{font-family:var(--serif);font-style:italic;font-size:16.5px;color:#fff;margin:9px 0 7px;line-height:1.5;}
+.rev-text{font-family:var(--serif);font-style:italic;font-size:16.5px;color:#fff;line-height:1.5;display:block;}
 [dir="rtl"] .rev-text{font-style:normal;}
-.rev-name{font-size:12.5px;color:var(--muted);letter-spacing:.3px;}
+.rev-name{font-size:12.5px;color:var(--muted);letter-spacing:.3px;font-family:var(--sans);font-style:normal;}
 
 .steps{display:flex;align-items:center;justify-content:center;gap:9px;margin:12px 0 2px;}
 .steps .s{display:inline-flex;align-items:center;gap:6px;font-size:9.5px;letter-spacing:2px;text-transform:uppercase;color:var(--faint);}

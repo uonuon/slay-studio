@@ -506,17 +506,24 @@ function Stars({ value, onChange, size = 22 }) {
 
 function ReviewsManager() {
   const { t } = useLang();
+  const inputRef = useRef(null);
   const [list, setList] = useState([]);
-  const [name, setName] = useState("");
+  const [img, setImg] = useState("");
   const [rating, setRating] = useState(5);
-  const [text, setText] = useState("");
+  const [busy, setBusy] = useState(false);
   const load = async () => setList(await store.listReviews());
   useEffect(() => { load(); }, []);
 
+  const pick = async (e) => {
+    const file = e.target.files?.[0]; e.target.value = "";
+    if (!file) return; setBusy(true);
+    try { setImg(await fileToDataURL(file, 1080, 0.78)); } catch (err) { toast("⚠︎"); }
+    setBusy(false);
+  };
   const post = async () => {
-    if (!name.trim() || !text.trim()) return toast(t("reviewNeed"));
-    await store.saveReview({ id: uid(), name: name.trim(), rating, text: text.trim(), createdAt: Date.now() });
-    setName(""); setText(""); setRating(5); load(); toast(t("saved"));
+    if (!img) return toast(t("reviewImgNeed"));
+    await store.saveReview({ id: uid(), img, rating, createdAt: Date.now() });
+    setImg(""); setRating(5); load(); toast(t("saved"));
   };
 
   const sorted = [...list].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
@@ -525,24 +532,28 @@ function ReviewsManager() {
     <>
       <div className="card" style={{ margin: "8px 0", background: "var(--card-2)" }}>
         <div className="svcn" style={{ color: "#fff", marginBottom: 8 }}>{t("addReview")}</div>
-        <label>{t("reviewerName")}</label>
-        <input value={name} onChange={(e) => setName(e.target.value)} />
-        <label style={{ marginTop: 10, display: "block" }}>{t("rating")}</label>
+        <input ref={inputRef} type="file" accept="image/*" onChange={pick} style={{ display: "none" }} />
+        {img
+          ? <img src={img} alt="" style={{ width: "100%", borderRadius: 12, border: "1px solid var(--line)", marginBottom: 4 }} />
+          : <div className="empty" style={{ padding: "18px 10px" }}><span className="big">🖼️</span>{t("reviewScreenshotHint")}</div>}
+        <label style={{ marginTop: 8, display: "block" }}>{t("rating")}</label>
         <Stars value={rating} onChange={setRating} />
-        <label style={{ marginTop: 10, display: "block" }}>{t("reviewText")}</label>
-        <textarea className="ta" rows={2} value={text} onChange={(e) => setText(e.target.value)} placeholder={t("reviewTextPh")} />
-        <button className="pink full" style={{ marginTop: 10 }} onClick={post}>{t("postReview")}</button>
+        <div className="acts" style={{ marginTop: 12 }}>
+          <button className="ghost sm" disabled={busy} onClick={() => inputRef.current?.click()}>{img ? t("changePhoto") : t("addReviewPhoto")}</button>
+          <button className="pink sm" onClick={post}>{t("postReview")}</button>
+        </div>
       </div>
       {sorted.map((r) => (
         <div key={r.id} className="card" style={{ margin: "8px 0", background: "var(--card-2)" }}>
-          <div className="top" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-            <div>
-              <Stars value={r.rating} size={15} />
-              <div className="svcn" style={{ color: "#fff", marginTop: 4 }}>{r.name}</div>
+          <div className="top" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+            {r.img
+              ? <img src={r.img} alt="" style={{ width: 96, borderRadius: 10, border: "1px solid var(--line)" }} />
+              : <div className="meta">{r.text}</div>}
+            <div style={{ textAlign: "end" }}>
+              <Stars value={r.rating || 5} size={14} />
+              <button className="danger sm" style={{ marginTop: 10 }} onClick={async () => { await store.delReview(r.id); load(); }}>{t("remove")}</button>
             </div>
-            <button className="danger sm" onClick={async () => { await store.delReview(r.id); load(); }}>{t("remove")}</button>
           </div>
-          <div className="meta" style={{ marginTop: 6 }}>{r.text}</div>
         </div>
       ))}
     </>

@@ -7,19 +7,13 @@ import { useLang, laneLabel, tName } from "@/lib/i18n";
 
 function reviewJsonLd(reviews) {
   const count = reviews.length;
-  const avg = count ? reviews.reduce((s, r) => s + (r.rating || 0), 0) / count : 0;
+  const avg = count ? reviews.reduce((s, r) => s + (r.rating || 5), 0) / count : 0;
   return {
     "@context": "https://schema.org",
     "@type": "HairSalon",
     name: "Slay Studio",
     url: "https://slay-studio.com",
     aggregateRating: { "@type": "AggregateRating", ratingValue: avg.toFixed(1), reviewCount: count, bestRating: 5 },
-    review: reviews.slice(0, 20).map((r) => ({
-      "@type": "Review",
-      author: { "@type": "Person", name: r.name },
-      reviewRating: { "@type": "Rating", ratingValue: r.rating, bestRating: 5 },
-      reviewBody: r.text,
-    })),
   };
 }
 
@@ -103,16 +97,21 @@ export default function Home({ services, onPick }) {
       {sortedReviews.length > 0 && (
         <div className="testi">
           <h2 className="sect">{t("reviewsHeading")}</h2>
-          {sortedReviews.map((r) => (
-            <div key={r.id} className="rev">
-              <div className="rev-stars">
-                <span className="on">{"★".repeat(Math.max(1, Math.min(5, r.rating)))}</span>
-                <span className="dim">{"★".repeat(5 - Math.max(1, Math.min(5, r.rating)))}</span>
-              </div>
-              <div className="rev-text">“{r.text}”</div>
-              <div className="rev-name">— {r.name}</div>
-            </div>
-          ))}
+          <div className="revstrip">
+            {sortedReviews.map((r) => {
+              const rate = Math.max(1, Math.min(5, r.rating || 5));
+              return (
+                <div key={r.id} className="revcard">
+                  <div className="rev-stars">
+                    <span className="on">{"★".repeat(rate)}</span><span className="dim">{"★".repeat(5 - rate)}</span>
+                  </div>
+                  {r.img
+                    ? <img src={r.img} alt="client review" loading="lazy" />
+                    : (r.text ? <div className="rev-text">“{r.text}” <span className="rev-name">— {r.name}</span></div> : null)}
+                </div>
+              );
+            })}
+          </div>
           <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(reviewJsonLd(sortedReviews)) }} />
         </div>
       )}
