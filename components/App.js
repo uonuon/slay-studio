@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { store } from "@/lib/store";
 import { firstWorkingDay } from "@/lib/util";
+import { track } from "@/lib/analytics";
 import { useLang, tName } from "@/lib/i18n";
 import Hero from "./Hero";
 import TopBar from "./TopBar";
@@ -27,6 +28,7 @@ export default function App() {
   }, []);
 
   const goBook = (family) => {
+    track("view_style", { name: family.group, value: Math.min(...family.opts.map((o) => o.price)) });
     setSel({
       family,
       service: family.opts.length === 1 ? family.opts[0] : null,

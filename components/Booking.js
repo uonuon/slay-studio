@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { LANE_META } from "@/lib/config";
 import { store } from "@/lib/store";
 import { availableStarts, dstr, hrs, t2m, todayStr, uid, toast } from "@/lib/util";
+import { track } from "@/lib/analytics";
 import { useLang, tVariant, dayShort } from "@/lib/i18n";
 
 export default function Booking({ sel, setSel, settings, onBack, onBooked }) {
@@ -50,8 +51,11 @@ export default function Booking({ sel, setSel, settings, onBack, onBooked }) {
       date, start, clientName: name.trim(), clientPhone: phone.trim(), status: "pending", createdAt: Date.now(),
     };
     // Persist without the (heavy) image; pass it to the confirm screen in memory only.
-    try { await store.createBooking(b); onBooked({ ...b, img: service.img || groupImg || "" }); }
-    catch (e) { toast(t("slotTaken")); setStart(null); }
+    try {
+      await store.createBooking(b);
+      track("book", { name: service.name, value: service.price });
+      onBooked({ ...b, img: service.img || groupImg || "" });
+    } catch (e) { toast(t("slotTaken")); setStart(null); }
   };
 
   const styleImg = service?.img || groupImg;
@@ -136,7 +140,7 @@ export default function Booking({ sel, setSel, settings, onBack, onBooked }) {
                             key={tm}
                             className={"slot" + (start === tm ? " sel" : "")}
                             tabIndex={0}
-                            onClick={() => setStart(tm)}
+                            onClick={() => { if (!start) track("begin_booking", { name: service.name, value: service.price }); setStart(tm); }}
                           >
                             {tm}
                           </div>

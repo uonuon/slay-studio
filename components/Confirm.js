@@ -1,5 +1,6 @@
 "use client";
 import { waLink } from "@/lib/util";
+import { track } from "@/lib/analytics";
 import { useLang, fmtDateL, tName } from "@/lib/i18n";
 
 export default function Confirm({ booking, settings, onHome }) {
@@ -40,7 +41,8 @@ export default function Confirm({ booking, settings, onHome }) {
         <p>{t("depositPara", { dep: dep.toLocaleString(), ip: settings.instapay })}</p>
       </div>
 
-      <a className="btn wa full glass" style={{ marginTop: 14 }} href={waLink(settings.whatsapp, msg)} target="_blank" rel="noopener noreferrer">
+      <a className="btn wa full glass" style={{ marginTop: 14 }} href={waLink(settings.whatsapp, msg)} target="_blank" rel="noopener noreferrer"
+         onClick={() => track("whatsapp", { name: svcName, value: dep })}>
         {t("sendOnWa")}
       </a>
       <button className="ghost full" style={{ marginTop: 9 }} onClick={onHome}>{t("backToStyles")}</button>
