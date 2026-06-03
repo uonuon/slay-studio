@@ -2,12 +2,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { LANE_META } from "@/lib/config";
 import { store } from "@/lib/store";
-import {
-  availableStarts, dstr, DAY, fmtDate, hrs, t2m, todayStr, uid, waLink, toast,
-} from "@/lib/util";
+import { availableStarts, dstr, hrs, t2m, todayStr, uid, toast } from "@/lib/util";
+import { useLang, tName, tSize, dayShort } from "@/lib/i18n";
 
 export default function Booking({ sel, setSel, settings, onBack, onBooked }) {
+  const { lang, t } = useLang();
   const family = sel.family;
+  const familyImg = family.opts.find((o) => o.img)?.img;
   const [service, setService] = useState(sel.service || null);
   const [date, setDate] = useState(sel.date || todayStr());
   const [starts, setStarts] = useState([]);
@@ -42,33 +43,38 @@ export default function Booking({ sel, setSel, settings, onBack, onBooked }) {
   }, [service, date, settings]);
 
   const submit = async () => {
-    if (!start) return toast("Pick a time first");
-    if (!name.trim() || !phone.trim()) return toast("Add your name & number");
+    if (!start) return toast(t("pickTimeFirst"));
+    if (!name.trim() || !phone.trim()) return toast(t("addNamePhone"));
     const b = {
       id: uid(), serviceId: service.id, serviceName: service.name, price: service.price, dur: service.dur,
       date, start, clientName: name.trim(), clientPhone: phone.trim(), status: "pending", createdAt: Date.now(),
     };
-    try { await store.createBooking(b); onBooked(b); }
-    catch (e) { toast("That slot was just taken"); setStart(null); }
+    // Persist without the (heavy) image; pass it to the confirm screen in memory only.
+    try { await store.createBooking(b); onBooked({ ...b, img: service.img || familyImg || "" }); }
+    catch (e) { toast(t("slotTaken")); setStart(null); }
   };
 
+  const styleImg = service?.img || familyImg;
+
   const groups = [
-    ["Morning", (t) => t2m(t) < 720],
-    ["Afternoon", (t) => t2m(t) >= 720 && t2m(t) < 1020],
-    ["Evening", (t) => t2m(t) >= 1020],
+    [t("morning"), (tm) => t2m(tm) < 720],
+    [t("afternoon"), (tm) => t2m(tm) >= 720 && t2m(tm) < 1020],
+    [t("evening"), (tm) => t2m(tm) >= 1020],
   ];
 
   return (
     <>
-      <button className="link" onClick={onBack}>‹ all styles</button>
+      <button className="link" onClick={onBack}>{t("allStyles")}</button>
       <div className="steps">
-        <span className="s">Style</span><span className="ln" /><span className="s on">Time</span><span className="ln" /><span className="s">You</span>
+        <span className="s">{t("stStyle")}</span><span className="ln" /><span className="s on">{t("stTime")}</span><span className="ln" /><span className="s">{t("stYou")}</span>
       </div>
-      <h2>{family.name}</h2>
+      <h2>{tName(family.name, lang)}</h2>
+
+      {styleImg && <div className="styleimg" style={{ backgroundImage: `url(${styleImg})` }} />}
 
       {family.opts.length > 1 && (
         <div className="card">
-          <label>Choose your size</label>
+          <label>{t("chooseSize")}</label>
           <div className="chips">
             {family.opts.map((o) => (
               <div
@@ -76,7 +82,7 @@ export default function Booking({ sel, setSel, settings, onBack, onBooked }) {
                 className={"chip" + (service && service.id === o.id ? " on" : "")}
                 onClick={() => { setService(o); setSel((s) => ({ ...s, service: o })); }}
               >
-                <div className="cs">{o.size || o.name}</div>
+                <div className="cs">{tSize(o.size, lang) || tName(o.name, lang)}</div>
                 <div className="cp">{o.price.toLocaleString()} · {hrs(o.dur)}h</div>
               </div>
             ))}
@@ -85,19 +91,19 @@ export default function Booking({ sel, setSel, settings, onBack, onBooked }) {
       )}
 
       {!service ? (
-        <div className="empty">Pick a size to see available times ↑</div>
+        <div className="empty">{t("pickSizeFirst")}</div>
       ) : (
         <>
           <div className="summary" style={{ margin: "13px 0" }}>
             <div>
-              <div className="when">{service.price.toLocaleString()} EGP</div>
-              <div className="svcn">{service.size ? service.size + " · " : ""}about {hrs(service.dur)} hours</div>
+              <div className="when">{service.price.toLocaleString()} {t("egp")}</div>
+              <div className="svcn">{service.size ? tSize(service.size, lang) + " · " : ""}{t("aboutHours", { n: hrs(service.dur) })}</div>
             </div>
             <div className="amt">{LANE_META[service.lane].emoji}</div>
           </div>
 
           <div className="card glass">
-            <label>Pick a date</label>
+            <label>{t("pickDate")}</label>
             <div className="datestrip">
               {dates.map((d) => (
                 <div
@@ -106,7 +112,7 @@ export default function Booking({ sel, setSel, settings, onBack, onBooked }) {
                   tabIndex={d.work ? 0 : -1}
                   onClick={() => d.work && setDate(d.str)}
                 >
-                  <div className="dw">{DAY[d.dow]}</div>
+                  <div className="dw">{dayShort(d.dow, lang)}</div>
                   <div className="dn">{d.dn}</div>
                 </div>
               ))}
@@ -118,7 +124,7 @@ export default function Booking({ sel, setSel, settings, onBack, onBooked }) {
                   <div className="skel" /><div className="skel" /><div className="skel" />
                 </div>
               ) : starts.length === 0 ? (
-                <div className="empty"><span className="big">🗓️</span>No open times that day — try another date.</div>
+                <div className="empty"><span className="big">🗓️</span>{t("noTimes")}</div>
               ) : (
                 groups.map(([lab, test]) => {
                   const g = starts.filter(test);
@@ -127,14 +133,14 @@ export default function Booking({ sel, setSel, settings, onBack, onBooked }) {
                     <div key={lab}>
                       <div className="sgroup">{lab}</div>
                       <div className="slotgrid">
-                        {g.map((t) => (
+                        {g.map((tm) => (
                           <div
-                            key={t}
-                            className={"slot" + (start === t ? " sel" : "")}
+                            key={tm}
+                            className={"slot" + (start === tm ? " sel" : "")}
                             tabIndex={0}
-                            onClick={() => setStart(t)}
+                            onClick={() => setStart(tm)}
                           >
-                            {t}
+                            {tm}
                           </div>
                         ))}
                       </div>
@@ -148,14 +154,14 @@ export default function Booking({ sel, setSel, settings, onBack, onBooked }) {
           {start && (
             <div className="card glass">
               <div className="steps">
-                <span className="s">Style</span><span className="ln" /><span className="s">Time</span><span className="ln" /><span className="s on">You</span>
+                <span className="s">{t("stStyle")}</span><span className="ln" /><span className="s">{t("stTime")}</span><span className="ln" /><span className="s on">{t("stYou")}</span>
               </div>
-              <label style={{ marginTop: 6, display: "block" }}>Your name</label>
-              <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Full name" />
-              <label style={{ marginTop: 12, display: "block" }}>WhatsApp number</label>
+              <label style={{ marginTop: 6, display: "block" }}>{t("yourName")}</label>
+              <input value={name} onChange={(e) => setName(e.target.value)} placeholder={t("fullName")} />
+              <label style={{ marginTop: 12, display: "block" }}>{t("waNumber")}</label>
               <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="01X XXXX XXXX" inputMode="tel" />
-              <button className="pink full" style={{ marginTop: 15 }} onClick={submit}>Confirm booking</button>
-              <small className="note">Next you’ll send a 50% deposit on WhatsApp to lock your slot. Refundable if cancelled 24h before.</small>
+              <button className="pink full" style={{ marginTop: 15 }} onClick={submit}>{t("confirmBooking")}</button>
+              <small className="note">{t("depositNote")}</small>
             </div>
           )}
         </>

@@ -1,22 +1,20 @@
 "use client";
 import { useEffect, useState } from "react";
 import { store } from "@/lib/store";
-import { USE_FB } from "@/lib/firebase";
 import { firstWorkingDay } from "@/lib/util";
+import { useLang } from "@/lib/i18n";
 import Hero from "./Hero";
 import Home from "./Home";
 import Booking from "./Booking";
 import Confirm from "./Confirm";
-import Login from "./Login";
-import Dashboard from "./Dashboard";
 
 export default function App() {
+  const { t } = useLang();
   const [ready, setReady] = useState(false);
   const [view, setView] = useState("home");
   const [services, setServices] = useState([]);
   const [settings, setSettings] = useState(null);
   const [sel, setSel] = useState({});
-  const [, setAdmin] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -41,34 +39,12 @@ export default function App() {
     setView("confirm");
   };
 
-  const onLoginSuccess = async () => {
-    if (USE_FB) {
-      await store.ensureSeed();
-      setServices(await store.getServices());
-      setSettings(await store.getSettings());
-    }
-    setAdmin(true);
-    setView("admin");
-  };
-
   if (!ready || !settings) {
     return (
       <div className="wrap">
         <Hero />
-        <div className="empty" style={{ marginTop: 40 }}>loading…</div>
+        <div className="empty" style={{ marginTop: 40 }}>{t("loading")}</div>
       </div>
-    );
-  }
-
-  if (view === "admin") {
-    return (
-      <Dashboard
-        services={services}
-        settings={settings}
-        setServices={setServices}
-        setSettings={setSettings}
-        onExit={() => { setAdmin(false); setView("home"); }}
-      />
     );
   }
 
@@ -76,9 +52,7 @@ export default function App() {
     <div className="wrap">
       <Hero />
       <div className="viewfade" key={view}>
-        {view === "home" && (
-          <Home services={services} onPick={goBook} onLogin={() => setView("login")} />
-        )}
+        {view === "home" && <Home services={services} onPick={goBook} />}
         {view === "book" && (
           <Booking
             sel={sel}
@@ -90,9 +64,6 @@ export default function App() {
         )}
         {view === "confirm" && (
           <Confirm booking={sel.booking} settings={settings} onHome={() => setView("home")} />
-        )}
-        {view === "login" && (
-          <Login onBack={() => setView("home")} onSuccess={onLoginSuccess} />
         )}
       </div>
       <div className="foot">slay studio · <b>@braids.bymarmora</b></div>

@@ -1,8 +1,9 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { USE_FB } from "@/lib/firebase";
 import { store } from "@/lib/store";
-import { fmtDate, todayStr, dstr, DAY, uid, waLink, toast } from "@/lib/util";
+import { todayStr, dstr, uid, waLink, toast, families, fileToDataURL } from "@/lib/util";
+import { useLang, fmtDateL, tName, dayShort } from "@/lib/i18n";
 import Hero from "./Hero";
 
 function Collapse({ title, children }) {
@@ -19,6 +20,7 @@ function Collapse({ title, children }) {
 }
 
 export default function Dashboard({ services, settings, setServices, setSettings, onExit }) {
+  const { t } = useLang();
   const [bookings, setBookings] = useState([]);
   const [tab, setTab] = useState("sched");
   const [openAdd, setOpenAdd] = useState(false);
@@ -37,7 +39,7 @@ export default function Dashboard({ services, settings, setServices, setSettings
 
   return (
     <div className="wrap">
-      <Hero subtitle="owner dashboard" />
+      <Hero subtitle={t("ownerDashboard")} />
       {tab === "sched" && (
         <Schedule bookings={bookings} settings={settings} services={services} openAdd={openAdd} setOpenAdd={setOpenAdd} setStatus={setStatus} onAdded={refresh} />
       )}
@@ -47,13 +49,13 @@ export default function Dashboard({ services, settings, setServices, setSettings
       )}
 
       <div className="tabbar">
-        {[["sched", "🗓️", "Schedule"], ["money", "📊", "Money"], ["setup", "⚙️", "Setup"]].map(([k, ic, lab]) => (
+        {[["sched", "🗓️", t("tabSchedule")], ["money", "📊", t("tabMoney")], ["setup", "⚙️", t("tabSetup")]].map(([k, ic, lab]) => (
           <button key={k} className={"t" + (tab === k ? " on" : "")} onClick={() => setTab(k)}>
             <span className="ic">{ic}</span>{lab}
           </button>
         ))}
         <button className="t" onClick={async () => { await store.logout(); onExit(); }}>
-          <span className="ic">↩︎</span>Exit
+          <span className="ic">↩︎</span>{t("tabExit")}
         </button>
       </div>
     </div>
@@ -61,36 +63,35 @@ export default function Dashboard({ services, settings, setServices, setSettings
 }
 
 function BookingCard({ b, settings, setStatus }) {
+  const { lang, t } = useLang();
   const dep = Math.round((b.price * settings.depositPct) / 100);
-  const conf =
-    "Hi " + b.clientName + " 💗 Your Slay Studio booking is confirmed:\n" + b.serviceName + "\n" +
-    fmtDate(b.date) + " at " + b.start + "\nPlease send the " + dep.toLocaleString() +
-    " EGP deposit to Instapay " + settings.instapay + " (account, not wallet) and a screenshot. See you ✨";
-  const rem =
-    "Hi " + b.clientName + " ✨ Reminder: your Slay Studio appointment is " + fmtDate(b.date) + " at " + b.start +
-    " for " + b.serviceName + ". Please wash your hair before and come with a bun or braid to save time 💗";
+  const dateStr = fmtDateL(b.date, lang);
+  const svcName = tName(b.serviceName, lang);
+  const conf = t("waConfirm", { name: b.clientName, service: svcName, date: dateStr, time: b.start, dep: dep.toLocaleString(), ip: settings.instapay });
+  const rem = t("waRemind", { name: b.clientName, service: svcName, date: dateStr, time: b.start });
   return (
     <div className="bk">
       <div className="top">
         <div>
-          <div className="when">{fmtDate(b.date)} · {b.start}</div>
-          <div className="svcn">{b.serviceName}</div>
-          <div className="meta">{b.clientName} · {b.clientPhone} · {b.price.toLocaleString()} EGP</div>
+          <div className="when">{dateStr} · {b.start}</div>
+          <div className="svcn">{svcName}</div>
+          <div className="meta">{b.clientName} · {b.clientPhone} · {b.price.toLocaleString()} {t("egp")}</div>
         </div>
-        <span className={"badge b-" + b.status}>{b.status}</span>
+        <span className={"badge b-" + b.status}>{t("st_" + b.status)}</span>
       </div>
       <div className="acts">
-        {b.status === "pending" && <button className="pink sm" onClick={() => setStatus(b.id, "confirmed")}>✓ Deposit received</button>}
-        {b.status === "confirmed" && <button className="ghost sm" onClick={() => setStatus(b.id, "done")}>Mark done</button>}
-        <a className="btn wa sm" href={waLink(b.clientPhone, conf)} target="_blank" rel="noopener noreferrer">Confirm</a>
-        <a className="btn ghost sm" href={waLink(b.clientPhone, rem)} target="_blank" rel="noopener noreferrer">Remind</a>
-        <button className="danger sm" onClick={() => { if (confirm("Cancel this booking?")) setStatus(b.id, "cancelled"); }}>Cancel</button>
+        {b.status === "pending" && <button className="pink sm" onClick={() => setStatus(b.id, "confirmed")}>{t("depositReceived")}</button>}
+        {b.status === "confirmed" && <button className="ghost sm" onClick={() => setStatus(b.id, "done")}>{t("markDone")}</button>}
+        <a className="btn wa sm" href={waLink(b.clientPhone, conf)} target="_blank" rel="noopener noreferrer">{t("confirmW")}</a>
+        <a className="btn ghost sm" href={waLink(b.clientPhone, rem)} target="_blank" rel="noopener noreferrer">{t("remind")}</a>
+        <button className="danger sm" onClick={() => { if (confirm(t("cancelQ"))) setStatus(b.id, "cancelled"); }}>{t("cancel")}</button>
       </div>
     </div>
   );
 }
 
 function Schedule({ bookings, settings, services, openAdd, setOpenAdd, setStatus, onAdded }) {
+  const { lang, t } = useLang();
   const today = bookings.filter((b) => b.date === todayStr() && b.status !== "cancelled").sort((x, y) => x.start.localeCompare(y.start));
   const up = bookings.filter((b) => b.date > todayStr() && b.status !== "cancelled" && b.status !== "done").sort((x, y) => (x.date + x.start).localeCompare(y.date + y.start));
   const past = bookings
@@ -99,28 +100,28 @@ function Schedule({ bookings, settings, services, openAdd, setOpenAdd, setStatus
 
   return (
     <>
-      <button className="ghost full" style={{ margin: "8px 0" }} onClick={() => setOpenAdd(!openAdd)}>＋ Add booking / walk-in</button>
+      <button className="ghost full" style={{ margin: "8px 0" }} onClick={() => setOpenAdd(!openAdd)}>{t("addBooking")}</button>
       {openAdd && <AddForm services={services} onAdded={() => { setOpenAdd(false); onAdded(); }} />}
 
-      <h2>Today</h2>
-      {today.length === 0 && <div className="card"><div className="empty"><span className="big">☕</span>No appointments today.</div></div>}
+      <h2>{t("today")}</h2>
+      {today.length === 0 && <div className="card"><div className="empty"><span className="big">☕</span>{t("noToday")}</div></div>}
       {today.map((b) => <BookingCard key={b.id} b={b} settings={settings} setStatus={setStatus} />)}
 
-      <h2>Upcoming</h2>
-      {up.length === 0 && <div className="card"><div className="empty"><span className="big">🗓️</span>Nothing booked ahead yet — share your link!</div></div>}
+      <h2>{t("upcoming")}</h2>
+      {up.length === 0 && <div className="card"><div className="empty"><span className="big">🗓️</span>{t("noUpcoming")}</div></div>}
       {up.map((b) => <BookingCard key={b.id} b={b} settings={settings} setStatus={setStatus} />)}
 
       {past.length > 0 && (
-        <Collapse title={"History (" + past.length + ")"}>
+        <Collapse title={t("history", { n: past.length })}>
           {past.map((b) => (
             <div key={b.id} className="bk" style={{ opacity: 0.8 }}>
               <div className="top">
                 <div>
-                  <div className="when">{fmtDate(b.date)} · {b.start}</div>
-                  <div className="svcn">{b.serviceName}</div>
-                  <div className="meta">{b.clientName} · {b.price.toLocaleString()} EGP</div>
+                  <div className="when">{fmtDateL(b.date, lang)} · {b.start}</div>
+                  <div className="svcn">{tName(b.serviceName, lang)}</div>
+                  <div className="meta">{b.clientName} · {b.price.toLocaleString()} {t("egp")}</div>
                 </div>
-                <span className={"badge b-" + b.status}>{b.status}</span>
+                <span className={"badge b-" + b.status}>{t("st_" + b.status)}</span>
               </div>
             </div>
           ))}
@@ -131,6 +132,7 @@ function Schedule({ bookings, settings, services, openAdd, setOpenAdd, setStatus
 }
 
 function AddForm({ services, onAdded }) {
+  const { lang, t } = useLang();
   const [svId, setSvId] = useState(services[0]?.id || "");
   const [date, setDate] = useState(todayStr());
   const [time, setTime] = useState("");
@@ -140,38 +142,39 @@ function AddForm({ services, onAdded }) {
   const add = async () => {
     const s = services.find((x) => x.id === svId);
     if (!s) return;
-    if (!/^\d{1,2}:\d{2}$/.test(time.trim())) return toast("Time like 14:00");
+    if (!/^\d{1,2}:\d{2}$/.test(time.trim())) return toast(t("timeFmt"));
     const b = {
       id: uid(), serviceId: s.id, serviceName: s.name, price: s.price, dur: s.dur,
       date, start: time.trim(), clientName: name.trim() || "Walk-in", clientPhone: phone.trim(),
       status: "confirmed", createdAt: Date.now(),
     };
     await store.createBooking(b);
-    toast("Added");
+    toast(t("added"));
     onAdded();
   };
 
   return (
     <div className="card glass">
-      <label>Service</label>
+      <label>{t("service")}</label>
       <select value={svId} onChange={(e) => setSvId(e.target.value)}>
-        {services.map((s) => <option key={s.id} value={s.id}>{s.name} — {s.price}</option>)}
+        {services.map((s) => <option key={s.id} value={s.id}>{tName(s.name, lang)} — {s.price}</option>)}
       </select>
       <div className="row2" style={{ marginTop: 10 }}>
-        <div><label>Date</label><input type="date" value={date} min={todayStr()} onChange={(e) => setDate(e.target.value)} /></div>
-        <div><label>Time</label><input value={time} onChange={(e) => setTime(e.target.value)} placeholder="14:00" /></div>
+        <div><label>{t("date")}</label><input type="date" value={date} min={todayStr()} onChange={(e) => setDate(e.target.value)} /></div>
+        <div><label>{t("time")}</label><input value={time} onChange={(e) => setTime(e.target.value)} placeholder="14:00" /></div>
       </div>
-      <label style={{ marginTop: 10, display: "block" }}>Client name</label>
-      <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" />
-      <label style={{ marginTop: 10, display: "block" }}>Phone</label>
+      <label style={{ marginTop: 10, display: "block" }}>{t("clientName")}</label>
+      <input value={name} onChange={(e) => setName(e.target.value)} placeholder={t("clientName")} />
+      <label style={{ marginTop: 10, display: "block" }}>{t("phone")}</label>
       <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="01XXXXXXXXX" />
-      <button className="pink full" style={{ marginTop: 12 }} onClick={add}>Add booking</button>
-      <small className="note">For walk-ins or phone bookings. Also blocks that time online.</small>
+      <button className="pink full" style={{ marginTop: 12 }} onClick={add}>{t("addBookingBtn")}</button>
+      <small className="note">{t("walkinNote")}</small>
     </div>
   );
 }
 
 function Money({ bookings, settings }) {
+  const { t } = useLang();
   const ym = todayStr().slice(0, 7);
   const conf = bookings.filter((b) => b.date.slice(0, 7) === ym && (b.status === "confirmed" || b.status === "done"));
   const rev = conf.reduce((s, b) => s + b.price, 0);
@@ -183,31 +186,30 @@ function Money({ bookings, settings }) {
 
   return (
     <>
-      <h2>This month</h2>
+      <h2>{t("thisMonth")}</h2>
       <div className="tiles">
-        <div className="tile"><div className="num">{(rev / 1000).toFixed(1)}k</div><div className="lab">EGP confirmed</div></div>
-        <div className="tile"><div className="num">{conf.length}</div><div className="lab">bookings</div></div>
-        <div className="tile"><div className="num">{wk.length}</div><div className="lab">this week</div></div>
+        <div className="tile"><div className="num">{(rev / 1000).toFixed(1)}k</div><div className="lab">{t("egpConfirmed")}</div></div>
+        <div className="tile"><div className="num">{conf.length}</div><div className="lab">{t("bookingsLab")}</div></div>
+        <div className="tile"><div className="num">{wk.length}</div><div className="lab">{t("thisWeek")}</div></div>
       </div>
       <div className="card glass">
         <div className="meta" style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5, color: "var(--muted)" }}>
-          <span>vs rent {settings.rent.toLocaleString()}</span><span style={{ color: "#fff" }}>{pct}%</span>
+          <span>{t("vsRent", { n: settings.rent.toLocaleString() })}</span><span style={{ color: "#fff" }}>{pct}%</span>
         </div>
         <div className="bar"><i style={{ width: pct + "%" }} /></div>
         <small className="note">
-          {pct >= 100
-            ? "Rent covered for the month 🎉 everything beyond this is profit before materials."
-            : "About " + Math.max(0, Math.ceil((settings.rent - rev) / 1800)) + " more bookings covers this month’s rent."}
+          {pct >= 100 ? t("rentCovered") : t("moreBookings", { n: Math.max(0, Math.ceil((settings.rent - rev) / 1800)) })}
         </small>
       </div>
       {pend > 0 && (
-        <div className="card"><div className="meta" style={{ color: "var(--warn)" }}>⏳ {pend} booking(s) waiting on a deposit — confirm them in Schedule.</div></div>
+        <div className="card"><div className="meta" style={{ color: "var(--warn)" }}>{t("pendingWaiting", { n: pend })}</div></div>
       )}
     </>
   );
 }
 
 function Setup({ services, settings, setServices, setSettings }) {
+  const { lang, t } = useLang();
   const [days, setDays] = useState([...settings.workDays]);
   const [open, setOpen] = useState(settings.openTime);
   const [close, setClose] = useState(settings.closeTime);
@@ -215,37 +217,41 @@ function Setup({ services, settings, setServices, setSettings }) {
 
   const saveAvail = async () => {
     const ns = { ...settings, workDays: [...days].sort(), openTime: open, closeTime: close, slotStep: +step };
-    await store.saveSettings(ns); setSettings(ns); toast("Saved");
+    await store.saveSettings(ns); setSettings(ns); toast(t("saved"));
   };
 
   return (
     <>
-      <h2>Availability</h2>
+      <h2>{t("availability")}</h2>
       <div className="card glass">
-        <label>Working days</label>
+        <label>{t("workingDays")}</label>
         <div className="days">
-          {DAY.map((d, i) => (
-            <div key={d} className={"day" + (days.includes(i) ? " on" : "")}
-              onClick={() => setDays((ds) => ds.includes(i) ? ds.filter((x) => x !== i) : [...ds, i])}>{d}</div>
+          {[0, 1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className={"day" + (days.includes(i) ? " on" : "")}
+              onClick={() => setDays((ds) => ds.includes(i) ? ds.filter((x) => x !== i) : [...ds, i])}>{dayShort(i, lang)}</div>
           ))}
         </div>
         <div className="row2" style={{ marginTop: 12 }}>
-          <div><label>Open</label><input value={open} onChange={(e) => setOpen(e.target.value)} /></div>
-          <div><label>Close</label><input value={close} onChange={(e) => setClose(e.target.value)} /></div>
+          <div><label>{t("open")}</label><input value={open} onChange={(e) => setOpen(e.target.value)} /></div>
+          <div><label>{t("close")}</label><input value={close} onChange={(e) => setClose(e.target.value)} /></div>
         </div>
-        <label style={{ marginTop: 10, display: "block" }}>Slot step (min)</label>
+        <label style={{ marginTop: 10, display: "block" }}>{t("slotStep")}</label>
         <input value={step} onChange={(e) => setStep(e.target.value)} />
-        <button className="pink full" style={{ marginTop: 12 }} onClick={saveAvail}>Save availability</button>
+        <button className="pink full" style={{ marginTop: 12 }} onClick={saveAvail}>{t("saveAvailability")}</button>
       </div>
 
-      <Collapse title="Services & prices">
+      <Collapse title={t("servicesPrices")}>
         {services.map((s) => (
           <ServiceRow key={s.id} s={s} setServices={setServices} />
         ))}
         <AddService setServices={setServices} />
       </Collapse>
 
-      <Collapse title="Studio settings">
+      <Collapse title={t("stylePhotos")}>
+        <StylePhotos services={services} setServices={setServices} />
+      </Collapse>
+
+      <Collapse title={t("studioSettings")}>
         <StudioSettings settings={settings} setSettings={setSettings} />
       </Collapse>
     </>
@@ -253,68 +259,133 @@ function Setup({ services, settings, setServices, setSettings }) {
 }
 
 function ServiceRow({ s, setServices }) {
+  const { lang, t } = useLang();
   const [price, setPrice] = useState(s.price);
   const [dur, setDur] = useState(s.dur);
   return (
     <div className="card" style={{ margin: "8px 0", background: "var(--card-2)" }}>
-      <div className="svcn" style={{ color: "#fff", marginBottom: 8 }}>{s.name}</div>
+      <div className="svcn" style={{ color: "#fff", marginBottom: 8 }}>{tName(s.name, lang)}</div>
       <div className="row2">
-        <div><label>Price</label><input value={price} onChange={(e) => setPrice(e.target.value)} /></div>
-        <div><label>Min</label><input value={dur} onChange={(e) => setDur(e.target.value)} /></div>
+        <div><label>{t("priceLab")}</label><input value={price} onChange={(e) => setPrice(e.target.value)} /></div>
+        <div><label>{t("minLab")}</label><input value={dur} onChange={(e) => setDur(e.target.value)} /></div>
       </div>
       <div className="acts">
-        <button className="pink sm" onClick={async () => { await store.saveService({ ...s, price: +price, dur: +dur }); setServices(await store.getServices()); toast("Saved"); }}>Save</button>
-        <button className="danger sm" onClick={async () => { if (confirm("Remove " + s.name + "?")) { await store.delService(s.id); setServices(await store.getServices()); } }}>Remove</button>
+        <button className="pink sm" onClick={async () => { await store.saveService({ ...s, price: +price, dur: +dur }); setServices(await store.getServices()); toast(t("saved")); }}>{t("save")}</button>
+        <button className="danger sm" onClick={async () => { if (confirm(t("removeQ", { x: tName(s.name, lang) }))) { await store.delService(s.id); setServices(await store.getServices()); } }}>{t("remove")}</button>
       </div>
     </div>
   );
 }
 
 function AddService({ setServices }) {
+  const { lang, t } = useLang();
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
   const [dur, setDur] = useState("");
   const [lane, setLane] = useState("Slay Studio");
   return (
     <div className="card" style={{ margin: "8px 0", background: "var(--card-2)" }}>
-      <div className="svcn" style={{ color: "#fff", marginBottom: 8 }}>Add a service</div>
-      <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Name (e.g. Fulani braids · Large)" />
+      <div className="svcn" style={{ color: "#fff", marginBottom: 8 }}>{t("addServiceTitle")}</div>
+      <input value={name} onChange={(e) => setName(e.target.value)} placeholder={t("serviceNamePh")} />
       <div className="row2" style={{ marginTop: 8 }}>
-        <input value={price} onChange={(e) => setPrice(e.target.value)} placeholder="Price" />
-        <input value={dur} onChange={(e) => setDur(e.target.value)} placeholder="Minutes" />
+        <input value={price} onChange={(e) => setPrice(e.target.value)} placeholder={t("pricePh")} />
+        <input value={dur} onChange={(e) => setDur(e.target.value)} placeholder={t("minutesPh")} />
       </div>
       <select style={{ marginTop: 8 }} value={lane} onChange={(e) => setLane(e.target.value)}>
-        <option>Slay Studio</option><option>Little Slays</option><option>Signature</option>
+        <option value="Slay Studio">Slay Studio</option>
+        <option value="Little Slays">Little Slays</option>
+        <option value="Signature">Signature</option>
       </select>
       <button className="pink full" style={{ marginTop: 10 }} onClick={async () => {
-        if (!name || !price) return toast("Name & price needed");
+        if (!name || !price) return toast(t("nameAndPrice"));
         await store.addService({ id: uid(), lane, name, price: +price, dur: +dur || 120 });
         setServices(await store.getServices());
         setName(""); setPrice(""); setDur("");
-      }}>Add</button>
+      }}>{t("addBtn")}</button>
+    </div>
+  );
+}
+
+function StylePhotos({ services, setServices }) {
+  const { lang, t } = useLang();
+  const fams = families(services);
+
+  const setFamilyImg = async (famName, img) => {
+    const all = await store.getServices();
+    for (const x of all) if (x.name.split(" · ")[0] === famName) await store.saveService({ ...x, img });
+    setServices(await store.getServices());
+  };
+
+  return (
+    <>
+      <small className="note" style={{ marginBottom: 6 }}>{t("photoNote")}</small>
+      {fams.map((f) => (
+        <PhotoRow key={f.name} fam={f} lang={lang} t={t} onSet={setFamilyImg} />
+      ))}
+    </>
+  );
+}
+
+function PhotoRow({ fam, lang, t, onSet }) {
+  const inputRef = useRef(null);
+  const [busy, setBusy] = useState(false);
+  const img = fam.opts.find((o) => o.img)?.img;
+
+  const pick = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setBusy(true);
+    try {
+      const url = await fileToDataURL(file);
+      await onSet(fam.name, url);
+      toast(t("photoSaved"));
+    } catch (err) {
+      toast("⚠︎");
+    }
+    setBusy(false);
+  };
+
+  return (
+    <div className="card" style={{ margin: "8px 0", background: "var(--card-2)" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        {img
+          ? <div className="thumb img" style={{ backgroundImage: `url(${img})`, width: 56, height: 56, flex: "0 0 56px" }} />
+          : <div className="thumb" style={{ background: "rgba(255,255,255,.06)", width: 56, height: 56, flex: "0 0 56px", fontSize: 22 }}>📷</div>}
+        <div style={{ flex: 1 }}>
+          <div className="svcn" style={{ color: "#fff" }}>{tName(fam.name, lang)}</div>
+          <div className="meta" style={{ fontSize: 11.5, color: "var(--muted)" }}>{img ? "" : t("noPhoto")}</div>
+        </div>
+      </div>
+      <input ref={inputRef} type="file" accept="image/*" onChange={pick} style={{ display: "none" }} />
+      <div className="acts">
+        <button className="pink sm" disabled={busy} onClick={() => inputRef.current?.click()}>{img ? t("changePhoto") : t("uploadPhoto")}</button>
+        {img && <button className="danger sm" disabled={busy} onClick={async () => { await onSet(fam.name, ""); toast(t("photoRemoved")); }}>{t("removePhoto")}</button>}
+      </div>
     </div>
   );
 }
 
 function StudioSettings({ settings, setSettings }) {
+  const { t } = useLang();
   const [wa, setWa] = useState(settings.whatsapp);
   const [ip, setIp] = useState(settings.instapay);
   const [dp, setDp] = useState(settings.depositPct);
   const [rt, setRt] = useState(settings.rent);
   return (
     <div>
-      <label>WhatsApp (country code, no +)</label>
+      <label>{t("waCC")}</label>
       <input value={wa} onChange={(e) => setWa(e.target.value)} />
-      <label style={{ marginTop: 10, display: "block" }}>Instapay number</label>
+      <label style={{ marginTop: 10, display: "block" }}>{t("instapayNumber")}</label>
       <input value={ip} onChange={(e) => setIp(e.target.value)} />
       <div className="row2" style={{ marginTop: 10 }}>
-        <div><label>Deposit %</label><input value={dp} onChange={(e) => setDp(e.target.value)} /></div>
-        <div><label>Monthly rent</label><input value={rt} onChange={(e) => setRt(e.target.value)} /></div>
+        <div><label>{t("depositPct")}</label><input value={dp} onChange={(e) => setDp(e.target.value)} /></div>
+        <div><label>{t("monthlyRent")}</label><input value={rt} onChange={(e) => setRt(e.target.value)} /></div>
       </div>
       <button className="pink full" style={{ marginTop: 12 }} onClick={async () => {
         const ns = { ...settings, whatsapp: wa, instapay: ip, depositPct: +dp, rent: +rt };
-        await store.saveSettings(ns); setSettings(ns); toast("Saved");
-      }}>Save settings</button>
+        await store.saveSettings(ns); setSettings(ns); toast(t("saved"));
+      }}>{t("saveSettings")}</button>
     </div>
   );
 }
