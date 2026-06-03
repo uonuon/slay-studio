@@ -200,10 +200,10 @@ function Schedule({ bookings, settings, services, openAdd, setOpenAdd, setStatus
 
   return (
     <>
-      <div className="panelcol">
-        <button className="ghost full" style={{ margin: "4px 0 12px" }} onClick={() => setOpenAdd(!openAdd)}>{t("addBooking")}</button>
-        {openAdd && <AddForm services={services} onAdded={() => { setOpenAdd(false); onAdded(); }} />}
+      <div className="sched-top">
+        <button className="pink" onClick={() => setOpenAdd(!openAdd)}>{t("addBooking")}</button>
       </div>
+      {openAdd && <div className="panelcol"><AddForm services={services} onAdded={() => { setOpenAdd(false); onAdded(); }} /></div>}
 
       <div className="cal">
         <div className="cal-head">
@@ -223,11 +223,23 @@ function Schedule({ bookings, settings, services, openAdd, setOpenAdd, setStatus
               <button key={d} className={"cal-cell" + (d === selected ? " sel" : "") + (d === todayStr() ? " today" : "")} onClick={() => setSelected(d)}>
                 <span className="cal-d">{Number(d.slice(8))}</span>
                 {list.length > 0 && (
-                  <span className="cal-dots">{list.slice(0, 4).map((b) => <i key={b.id} className={"cdot b-" + b.status} />)}</span>
+                  <span className="cal-evs">
+                    {list.slice(0, 3).map((b) => (
+                      <span key={b.id} className={"cal-ev b-" + b.status} title={b.clientName}>
+                        <b>{b.start}</b> {(b.clientName || "").split(" ")[0]}
+                      </span>
+                    ))}
+                    {list.length > 3 && <span className="cal-more">+{list.length - 3}</span>}
+                  </span>
                 )}
               </button>
             );
           })}
+        </div>
+        <div className="cal-legend">
+          <span><i className="lg b-pending" />{t("st_pending")}</span>
+          <span><i className="lg b-confirmed" />{t("st_confirmed")}</span>
+          <span><i className="lg b-done" />{t("st_done")}</span>
         </div>
       </div>
 
@@ -351,10 +363,15 @@ function AvailabilityPanel({ settings, setSettings }) {
 }
 
 function ServicesPanel({ services, setServices }) {
+  const { t } = useLang();
+  const [adding, setAdding] = useState(false);
   return (
     <div className="panelcol">
+      <div className="sched-top">
+        <button className="pink" onClick={() => setAdding((v) => !v)}>＋ {t("addServiceTitle")}</button>
+      </div>
+      {adding && <AddService services={services} setServices={setServices} onDone={() => setAdding(false)} />}
       {services.map((s) => <ServiceRow key={s.id} s={s} setServices={setServices} />)}
-      <AddService services={services} setServices={setServices} />
     </div>
   );
 }
@@ -362,6 +379,7 @@ function ServicesPanel({ services, setServices }) {
 function ServiceRow({ s, setServices }) {
   const { lang, t } = useLang();
   const inputRef = useRef(null);
+  const [open, setOpen] = useState(false);
   const [group, setGroup] = useState(groupKey(s));
   const [name, setName] = useState(s.name);
   const [price, setPrice] = useState(s.price);
@@ -383,34 +401,41 @@ function ServiceRow({ s, setServices }) {
   const rmPhoto = async () => { await store.saveService({ ...s, img: "" }); setServices(await store.getServices()); toast(t("photoRemoved")); };
 
   return (
-    <div className="card" style={{ margin: "8px 0", background: "var(--card-2)" }}>
-      <div style={{ display: "flex", gap: 12, alignItems: "flex-end" }}>
+    <div className="erow">
+      <div className="erow-head" onClick={() => setOpen((v) => !v)}>
         {img
-          ? <div className="thumb img" style={{ backgroundImage: `url(${img})`, width: 56, height: 56, flex: "0 0 56px" }} />
-          : <div className="thumb" style={{ background: "rgba(255,255,255,.06)", width: 56, height: 56, flex: "0 0 56px", fontSize: 22 }}>📷</div>}
-        <div style={{ flex: 1 }}>
+          ? <div className="thumb img" style={{ backgroundImage: `url(${img})`, width: 46, height: 46, flex: "0 0 46px" }} />
+          : <div className="thumb" style={{ background: "rgba(255,255,255,.06)", width: 46, height: 46, flex: "0 0 46px", fontSize: 19 }}>📷</div>}
+        <div className="erow-info">
+          <div className="erow-name">{tName(s.name, lang)}</div>
+          <div className="erow-sub">{tName(groupKey(s), lang)} · {s.price.toLocaleString()} {t("egp")} · {s.dur}m</div>
+        </div>
+        <span className="erow-caret">{open ? "⌄" : "›"}</span>
+      </div>
+      {open && (
+        <div className="erow-body">
           <label>{t("category")}</label>
           <input value={group} onChange={(e) => setGroup(e.target.value)} />
+          <label style={{ marginTop: 10, display: "block" }}>{t("styleName")}</label>
+          <input value={name} onChange={(e) => setName(e.target.value)} />
+          <div className="row2" style={{ marginTop: 10 }}>
+            <div><label>{t("priceLab")}</label><input value={price} onChange={(e) => setPrice(e.target.value)} /></div>
+            <div><label>{t("minLab")}</label><input value={dur} onChange={(e) => setDur(e.target.value)} /></div>
+          </div>
+          <input ref={inputRef} type="file" accept="image/*" onChange={onPhoto} style={{ display: "none" }} />
+          <div className="acts">
+            <button className="pink sm" onClick={save}>{t("save")}</button>
+            <button className="ghost sm" disabled={busy} onClick={() => inputRef.current?.click()}>{img ? t("changePhoto") : t("addPhoto")}</button>
+            {img && <button className="ghost sm" disabled={busy} onClick={rmPhoto}>{t("removePhoto")}</button>}
+            <button className="danger sm" onClick={async () => { if (confirm(t("removeQ", { x: tName(s.name, lang) }))) { await store.delService(s.id); setServices(await store.getServices()); } }}>{t("remove")}</button>
+          </div>
         </div>
-      </div>
-      <label style={{ marginTop: 10, display: "block" }}>{t("styleName")}</label>
-      <input value={name} onChange={(e) => setName(e.target.value)} />
-      <div className="row2" style={{ marginTop: 10 }}>
-        <div><label>{t("priceLab")}</label><input value={price} onChange={(e) => setPrice(e.target.value)} /></div>
-        <div><label>{t("minLab")}</label><input value={dur} onChange={(e) => setDur(e.target.value)} /></div>
-      </div>
-      <input ref={inputRef} type="file" accept="image/*" onChange={onPhoto} style={{ display: "none" }} />
-      <div className="acts">
-        <button className="pink sm" onClick={save}>{t("save")}</button>
-        <button className="ghost sm" disabled={busy} onClick={() => inputRef.current?.click()}>{img ? t("changePhoto") : t("addPhoto")}</button>
-        {img && <button className="ghost sm" disabled={busy} onClick={rmPhoto}>{t("removePhoto")}</button>}
-        <button className="danger sm" onClick={async () => { if (confirm(t("removeQ", { x: tName(s.name, lang) }))) { await store.delService(s.id); setServices(await store.getServices()); } }}>{t("remove")}</button>
-      </div>
+      )}
     </div>
   );
 }
 
-function AddService({ services, setServices }) {
+function AddService({ services, setServices, onDone }) {
   const { t } = useLang();
   const inputRef = useRef(null);
   const [lane, setLane] = useState("Slay Studio");
@@ -433,6 +458,7 @@ function AddService({ services, setServices }) {
     await store.addService({ id: uid(), lane, group: group.trim(), name: name.trim(), price: +price, dur: +dur || 120, img });
     setServices(await store.getServices());
     setGroup(""); setName(""); setPrice(""); setDur(""); setImg("");
+    toast(t("saved")); onDone && onDone();
   };
 
   return (
@@ -578,6 +604,7 @@ function ReviewsManager() {
   const [img, setImg] = useState("");
   const [rating, setRating] = useState(5);
   const [busy, setBusy] = useState(false);
+  const [adding, setAdding] = useState(false);
   const load = async () => setList(await store.listReviews());
   useEffect(() => { load(); }, []);
 
@@ -590,40 +617,55 @@ function ReviewsManager() {
   const post = async () => {
     if (!img) return toast(t("reviewImgNeed"));
     await store.saveReview({ id: uid(), img, rating, createdAt: Date.now() });
-    setImg(""); setRating(5); load(); toast(t("saved"));
+    setImg(""); setRating(5); setAdding(false); load(); toast(t("saved"));
   };
 
   const sorted = [...list].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
 
   return (
     <>
-      <div className="card" style={{ margin: "8px 0", background: "var(--card-2)" }}>
-        <div className="svcn" style={{ color: "#fff", marginBottom: 8 }}>{t("addReview")}</div>
-        <input ref={inputRef} type="file" accept="image/*" onChange={pick} style={{ display: "none" }} />
-        {img
-          ? <img src={img} alt="" style={{ width: "100%", borderRadius: 12, border: "1px solid var(--line)", marginBottom: 4 }} />
-          : <div className="empty" style={{ padding: "18px 10px" }}><span className="big">🖼️</span>{t("reviewScreenshotHint")}</div>}
-        <label style={{ marginTop: 8, display: "block" }}>{t("rating")}</label>
-        <Stars value={rating} onChange={setRating} />
-        <div className="acts" style={{ marginTop: 12 }}>
-          <button className="ghost sm" disabled={busy} onClick={() => inputRef.current?.click()}>{img ? t("changePhoto") : t("addReviewPhoto")}</button>
-          <button className="pink sm" onClick={post}>{t("postReview")}</button>
-        </div>
+      <div className="sched-top">
+        <button className="pink" onClick={() => setAdding((v) => !v)}>＋ {t("addReview")}</button>
       </div>
-      {sorted.map((r) => (
-        <div key={r.id} className="card" style={{ margin: "8px 0", background: "var(--card-2)" }}>
-          <div className="top" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
-            {r.img
-              ? <img src={r.img} alt="" style={{ width: 96, borderRadius: 10, border: "1px solid var(--line)" }} />
-              : <div className="meta">{r.text}</div>}
-            <div style={{ textAlign: "end" }}>
-              <Stars value={r.rating || 5} size={14} />
-              <button className="danger sm" style={{ marginTop: 10 }} onClick={async () => { await store.delReview(r.id); load(); }}>{t("remove")}</button>
-            </div>
+      {adding && (
+        <div className="card" style={{ margin: "0 0 10px", background: "var(--card-2)" }}>
+          <input ref={inputRef} type="file" accept="image/*" onChange={pick} style={{ display: "none" }} />
+          {img
+            ? <img src={img} alt="" style={{ width: "100%", borderRadius: 12, border: "1px solid var(--line)", marginBottom: 4 }} />
+            : <div className="empty" style={{ padding: "18px 10px" }}><span className="big">🖼️</span>{t("reviewScreenshotHint")}</div>}
+          <label style={{ marginTop: 8, display: "block" }}>{t("rating")}</label>
+          <Stars value={rating} onChange={setRating} />
+          <div className="acts" style={{ marginTop: 12 }}>
+            <button className="ghost sm" disabled={busy} onClick={() => inputRef.current?.click()}>{img ? t("changePhoto") : t("addReviewPhoto")}</button>
+            <button className="pink sm" onClick={post}>{t("postReview")}</button>
           </div>
         </div>
-      ))}
+      )}
+      {sorted.map((r) => <ReviewRow key={r.id} r={r} onDel={async () => { await store.delReview(r.id); load(); }} />)}
     </>
+  );
+}
+
+function ReviewRow({ r, onDel }) {
+  const { t } = useLang();
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="erow">
+      <div className="erow-head" onClick={() => setOpen((v) => !v)}>
+        {r.img
+          ? <div className="thumb img" style={{ backgroundImage: `url(${r.img})`, width: 46, height: 46, flex: "0 0 46px" }} />
+          : <div className="thumb" style={{ width: 46, height: 46, flex: "0 0 46px", fontSize: 18, color: "#f0c860" }}>★</div>}
+        <div className="erow-info"><Stars value={r.rating || 5} size={15} /></div>
+        <span className="erow-caret">{open ? "⌄" : "›"}</span>
+      </div>
+      {open && (
+        <div className="erow-body">
+          {r.img && <img src={r.img} alt="" style={{ width: "100%", borderRadius: 12, border: "1px solid var(--line)", marginTop: 12 }} />}
+          {r.text && <div className="meta" style={{ marginTop: 10 }}>{r.text}</div>}
+          <div className="acts"><button className="danger sm" onClick={onDel}>{t("remove")}</button></div>
+        </div>
+      )}
+    </div>
   );
 }
 
