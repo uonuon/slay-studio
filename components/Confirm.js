@@ -14,10 +14,13 @@ export default function Confirm({ booking, settings, onHome }) {
 
   return (
     <>
-      <div className="check">
-        <svg viewBox="0 0 36 36"><path d="M9 18.5l6 6 12-13" /></svg>
+      <div className="confirm-head">
+        <div className="check">
+          <svg viewBox="0 0 36 36"><path d="M9 18.5l6 6 12-13" /></svg>
+        </div>
+        <div className="eyebrow" style={{ color: "var(--pink-2)" }}>{t("confirmEyebrow")}</div>
+        <h2 style={{ textAlign: "center", margin: "6px 0 0" }}>{t("almostBooked")}</h2>
       </div>
-      <h2 style={{ textAlign: "center" }}>{t("almostBooked")}</h2>
 
       {b.img && <div className="styleimg" style={{ backgroundImage: `url(${b.img})` }} />}
 
@@ -33,6 +36,7 @@ export default function Confirm({ booking, settings, onHome }) {
 
       <div className="card deposit">
         <div className="eyebrow">{t("lockSlot")}</div>
+        <div className="depbig">{dep.toLocaleString()} <span>{t("egp")}</span></div>
         <p>{t("depositPara", { dep: dep.toLocaleString(), ip: settings.instapay })}</p>
       </div>
 

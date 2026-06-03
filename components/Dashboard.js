@@ -62,15 +62,30 @@ export default function Dashboard({ services, settings, setServices, setSettings
   );
 }
 
-function BookingCard({ b, settings, setStatus }) {
+function BookingCard({ b, settings, services = [], setStatus, onChanged }) {
   const { lang, t } = useLang();
   const dep = Math.round((b.price * settings.depositPct) / 100);
   const dateStr = fmtDateL(b.date, lang);
   const svcName = tName(b.serviceName, lang);
   const conf = t("waConfirm", { name: b.clientName, service: svcName, date: dateStr, time: b.start, dep: dep.toLocaleString(), ip: settings.instapay });
   const rem = t("waRemind", { name: b.clientName, service: svcName, date: dateStr, time: b.start });
+  const editable = b.status !== "done" && b.status !== "cancelled";
+  const [editing, setEditing] = useState(false);
+  const [svId, setSvId] = useState(b.serviceId);
+  const [date, setDate] = useState(b.date);
+  const [time, setTime] = useState(b.start);
+
+  const saveEdit = async () => {
+    if (!/^\d{1,2}:\d{2}$/.test(time.trim())) return toast(t("timeFmt"));
+    const s = services.find((x) => x.id === svId);
+    const nb = { ...b, date, start: time.trim(), ...(s ? { serviceId: s.id, serviceName: s.name, price: s.price, dur: s.dur } : {}) };
+    await store.updateBooking(nb);
+    setEditing(false); toast(t("saved"));
+    onChanged && onChanged();
+  };
+
   return (
-    <div className="bk">
+    <div className={"bk bk-" + b.status}>
       <div className="top">
         <div>
           <div className="when">{dateStr} · {b.start}</div>
@@ -82,10 +97,28 @@ function BookingCard({ b, settings, setStatus }) {
       <div className="acts">
         {b.status === "pending" && <button className="pink sm" onClick={() => setStatus(b.id, "confirmed")}>{t("depositReceived")}</button>}
         {b.status === "confirmed" && <button className="ghost sm" onClick={() => setStatus(b.id, "done")}>{t("markDone")}</button>}
+        {editable && <button className={"ghost sm" + (editing ? " on" : "")} onClick={() => setEditing((v) => !v)}>{t("edit")}</button>}
         <a className="btn wa sm" href={waLink(b.clientPhone, conf)} target="_blank" rel="noopener noreferrer">{t("confirmW")}</a>
         <a className="btn ghost sm" href={waLink(b.clientPhone, rem)} target="_blank" rel="noopener noreferrer">{t("remind")}</a>
         <button className="danger sm" onClick={() => { if (confirm(t("cancelQ"))) setStatus(b.id, "cancelled"); }}>{t("cancel")}</button>
       </div>
+
+      {editing && (
+        <div className="card glass" style={{ marginTop: 11 }}>
+          <label>{t("changeService")}</label>
+          <select value={svId} onChange={(e) => setSvId(e.target.value)}>
+            {services.map((s) => <option key={s.id} value={s.id}>{tName(s.name, lang)} — {s.price}</option>)}
+          </select>
+          <div className="row2" style={{ marginTop: 10 }}>
+            <div><label>{t("date")}</label><input type="date" value={date} min={todayStr()} onChange={(e) => setDate(e.target.value)} /></div>
+            <div><label>{t("time")}</label><input value={time} onChange={(e) => setTime(e.target.value)} placeholder="14:00" /></div>
+          </div>
+          <div className="acts" style={{ marginTop: 10 }}>
+            <button className="pink sm" onClick={saveEdit}>{t("save")}</button>
+            <button className="ghost sm" onClick={() => setEditing(false)}>{t("cancel")}</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -103,18 +136,18 @@ function Schedule({ bookings, settings, services, openAdd, setOpenAdd, setStatus
       <button className="ghost full" style={{ margin: "8px 0" }} onClick={() => setOpenAdd(!openAdd)}>{t("addBooking")}</button>
       {openAdd && <AddForm services={services} onAdded={() => { setOpenAdd(false); onAdded(); }} />}
 
-      <h2>{t("today")}</h2>
+      <h2 className="sect">{t("today")}</h2>
       {today.length === 0 && <div className="card"><div className="empty"><span className="big">☕</span>{t("noToday")}</div></div>}
-      {today.map((b) => <BookingCard key={b.id} b={b} settings={settings} setStatus={setStatus} />)}
+      {today.map((b) => <BookingCard key={b.id} b={b} settings={settings} services={services} setStatus={setStatus} onChanged={onAdded} />)}
 
-      <h2>{t("upcoming")}</h2>
+      <h2 className="sect">{t("upcoming")}</h2>
       {up.length === 0 && <div className="card"><div className="empty"><span className="big">🗓️</span>{t("noUpcoming")}</div></div>}
-      {up.map((b) => <BookingCard key={b.id} b={b} settings={settings} setStatus={setStatus} />)}
+      {up.map((b) => <BookingCard key={b.id} b={b} settings={settings} services={services} setStatus={setStatus} onChanged={onAdded} />)}
 
       {past.length > 0 && (
         <Collapse title={t("history", { n: past.length })}>
           {past.map((b) => (
-            <div key={b.id} className="bk" style={{ opacity: 0.8 }}>
+            <div key={b.id} className={"bk bk-" + b.status} style={{ opacity: 0.8 }}>
               <div className="top">
                 <div>
                   <div className="when">{fmtDateL(b.date, lang)} · {b.start}</div>
@@ -186,7 +219,7 @@ function Money({ bookings, settings }) {
 
   return (
     <>
-      <h2>{t("thisMonth")}</h2>
+      <h2 className="sect">{t("thisMonth")}</h2>
       <div className="tiles">
         <div className="tile"><div className="num">{(rev / 1000).toFixed(1)}k</div><div className="lab">{t("egpConfirmed")}</div></div>
         <div className="tile"><div className="num">{conf.length}</div><div className="lab">{t("bookingsLab")}</div></div>
@@ -222,7 +255,7 @@ function Setup({ services, settings, setServices, setSettings }) {
 
   return (
     <>
-      <h2>{t("availability")}</h2>
+      <h2 className="sect">{t("availability")}</h2>
       <div className="card glass">
         <label>{t("workingDays")}</label>
         <div className="days">
