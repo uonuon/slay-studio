@@ -2,13 +2,13 @@
 import { useState } from "react";
 import { USE_FB } from "@/lib/firebase";
 import { store } from "@/lib/store";
-import { ADMIN_EMAIL, DEMO_ADMIN_PASS } from "@/lib/config";
+import { DEMO_ADMIN_PASS } from "@/lib/config";
 import { toast } from "@/lib/util";
 import { useLang } from "@/lib/i18n";
 
 export default function Login({ onBack, onSuccess }) {
   const { t } = useLang();
-  const [email, setEmail] = useState(ADMIN_EMAIL);
+  const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
 
   const go = async () => {
@@ -37,7 +37,7 @@ export default function Login({ onBack, onSuccess }) {
         {USE_FB ? (
           <>
             <label>{t("email")}</label>
-            <input value={email} onChange={(e) => setEmail(e.target.value)} />
+            <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="support@slay-studio.com" type="email" autoComplete="username" />
             <label style={{ marginTop: 12, display: "block" }}>{t("password")}</label>
             <input type="password" value={pw} onChange={(e) => setPw(e.target.value)} placeholder="••••••••" />
           </>

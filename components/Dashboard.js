@@ -4,7 +4,16 @@ import { USE_FB } from "@/lib/firebase";
 import { store } from "@/lib/store";
 import { todayStr, dstr, uid, waLink, toast, groupKey, normPhone, fileToDataURL } from "@/lib/util";
 import { useLang, fmtDateL, tName, dayShort } from "@/lib/i18n";
-import Hero from "./Hero";
+
+function AdLang() {
+  const { lang, setLang } = useLang();
+  return (
+    <div className="langtoggle">
+      <button className={lang === "ar" ? "on" : ""} onClick={() => setLang("ar")}>ع</button>
+      <button className={lang === "en" ? "on" : ""} onClick={() => setLang("en")}>EN</button>
+    </div>
+  );
+}
 
 function Collapse({ title, children }) {
   const [open, setOpen] = useState(false);
@@ -36,28 +45,54 @@ export default function Dashboard({ services, settings, setServices, setSettings
 
   const refresh = async () => setBookings(await store.listBookings());
   const setStatus = async (id, status) => { await store.setStatus(id, status); if (!USE_FB) refresh(); };
+  const exit = async () => { await store.logout(); onExit(); };
+
+  const TABS = [
+    ["sched", "🗓️", t("tabSchedule")],
+    ["clients", "👥", t("tabClients")],
+    ["money", "📊", t("tabMoney")],
+    ["setup", "⚙️", t("tabSetup")],
+  ];
+  const title = (TABS.find((x) => x[0] === tab) || [])[2];
 
   return (
-    <div className="wrap">
-      <Hero subtitle={t("ownerDashboard")} />
-      {tab === "sched" && (
-        <Schedule bookings={bookings} settings={settings} services={services} openAdd={openAdd} setOpenAdd={setOpenAdd} setStatus={setStatus} onAdded={refresh} />
-      )}
-      {tab === "clients" && <Clients bookings={bookings} settings={settings} />}
-      {tab === "money" && <Money bookings={bookings} settings={settings} />}
-      {tab === "setup" && (
-        <Setup services={services} settings={settings} setServices={setServices} setSettings={setSettings} />
-      )}
+    <div className="admin">
+      <aside className="adside">
+        <div className="adbrand">slay studio</div>
+        <nav className="adnav">
+          {TABS.map(([k, ic, lab]) => (
+            <button key={k} className={tab === k ? "on" : ""} onClick={() => setTab(k)}>
+              <span className="ic">{ic}</span>{lab}
+            </button>
+          ))}
+        </nav>
+        <button className="adside-exit" onClick={exit}><span className="ic">↩︎</span>{t("tabExit")}</button>
+      </aside>
 
-      <div className="tabbar">
-        {[["sched", "🗓️", t("tabSchedule")], ["clients", "👥", t("tabClients")], ["money", "📊", t("tabMoney")], ["setup", "⚙️", t("tabSetup")]].map(([k, ic, lab]) => (
+      <main className="admain">
+        <header className="adtop">
+          <h1>{title}</h1>
+          <AdLang />
+        </header>
+        <div className="adcontent">
+          {tab === "sched" && (
+            <Schedule bookings={bookings} settings={settings} services={services} openAdd={openAdd} setOpenAdd={setOpenAdd} setStatus={setStatus} onAdded={refresh} />
+          )}
+          {tab === "clients" && <Clients bookings={bookings} settings={settings} />}
+          {tab === "money" && <Money bookings={bookings} settings={settings} />}
+          {tab === "setup" && (
+            <Setup services={services} settings={settings} setServices={setServices} setSettings={setSettings} />
+          )}
+        </div>
+      </main>
+
+      <div className="adbottom">
+        {TABS.map(([k, ic, lab]) => (
           <button key={k} className={"t" + (tab === k ? " on" : "")} onClick={() => setTab(k)}>
             <span className="ic">{ic}</span>{lab}
           </button>
         ))}
-        <button className="t" onClick={async () => { await store.logout(); onExit(); }}>
-          <span className="ic">↩︎</span>{t("tabExit")}
-        </button>
+        <button className="t" onClick={exit}><span className="ic">↩︎</span>{t("tabExit")}</button>
       </div>
     </div>
   );
@@ -134,16 +169,20 @@ function Schedule({ bookings, settings, services, openAdd, setOpenAdd, setStatus
 
   return (
     <>
-      <button className="ghost full" style={{ margin: "8px 0" }} onClick={() => setOpenAdd(!openAdd)}>{t("addBooking")}</button>
-      {openAdd && <AddForm services={services} onAdded={() => { setOpenAdd(false); onAdded(); }} />}
+      <div className="panelcol">
+        <button className="ghost full" style={{ margin: "8px 0" }} onClick={() => setOpenAdd(!openAdd)}>{t("addBooking")}</button>
+        {openAdd && <AddForm services={services} onAdded={() => { setOpenAdd(false); onAdded(); }} />}
+      </div>
 
       <h2 className="sect">{t("today")}</h2>
-      {today.length === 0 && <div className="card"><div className="empty"><span className="big">☕</span>{t("noToday")}</div></div>}
-      {today.map((b) => <BookingCard key={b.id} b={b} settings={settings} services={services} setStatus={setStatus} onChanged={onAdded} />)}
+      {today.length === 0
+        ? <div className="card"><div className="empty"><span className="big">☕</span>{t("noToday")}</div></div>
+        : <div className="cards">{today.map((b) => <BookingCard key={b.id} b={b} settings={settings} services={services} setStatus={setStatus} onChanged={onAdded} />)}</div>}
 
       <h2 className="sect">{t("upcoming")}</h2>
-      {up.length === 0 && <div className="card"><div className="empty"><span className="big">🗓️</span>{t("noUpcoming")}</div></div>}
-      {up.map((b) => <BookingCard key={b.id} b={b} settings={settings} services={services} setStatus={setStatus} onChanged={onAdded} />)}
+      {up.length === 0
+        ? <div className="card"><div className="empty"><span className="big">🗓️</span>{t("noUpcoming")}</div></div>
+        : <div className="cards">{up.map((b) => <BookingCard key={b.id} b={b} settings={settings} services={services} setStatus={setStatus} onChanged={onAdded} />)}</div>}
 
       {past.length > 0 && (
         <Collapse title={t("history", { n: past.length })}>
@@ -219,7 +258,7 @@ function Money({ bookings, settings }) {
   const pend = bookings.filter((b) => b.status === "pending").length;
 
   return (
-    <>
+    <div className="panelcol">
       <h2 className="sect">{t("thisMonth")}</h2>
       <div className="tiles">
         <div className="tile"><div className="num">{(rev / 1000).toFixed(1)}k</div><div className="lab">{t("egpConfirmed")}</div></div>
@@ -238,7 +277,7 @@ function Money({ bookings, settings }) {
       {pend > 0 && (
         <div className="card"><div className="meta" style={{ color: "var(--warn)" }}>{t("pendingWaiting", { n: pend })}</div></div>
       )}
-    </>
+    </div>
   );
 }
 
@@ -255,7 +294,7 @@ function Setup({ services, settings, setServices, setSettings }) {
   };
 
   return (
-    <>
+    <div className="panelcol">
       <h2 className="sect">{t("availability")}</h2>
       <div className="card glass">
         <label>{t("workingDays")}</label>
@@ -288,7 +327,7 @@ function Setup({ services, settings, setServices, setSettings }) {
       <Collapse title={t("studioSettings")}>
         <StudioSettings settings={settings} setSettings={setSettings} />
       </Collapse>
-    </>
+    </div>
   );
 }
 
@@ -442,9 +481,9 @@ function Clients({ bookings, settings }) {
   return (
     <>
       {due.length > 0 && <h2 className="sect">{t("clientsDue", { n: due.length })}</h2>}
-      {due.map(renderCard)}
+      {due.length > 0 && <div className="cards">{due.map(renderCard)}</div>}
       <h2 className="sect">{t("clientsAll", { n: clients.length })}</h2>
-      {clients.filter((c) => !c.due).map(renderCard)}
+      <div className="cards">{clients.filter((c) => !c.due).map(renderCard)}</div>
     </>
   );
 }
