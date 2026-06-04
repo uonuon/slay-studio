@@ -55,6 +55,7 @@ export default function Dashboard({ services, settings, setServices, setSettings
   ];
   const MANAGE = [
     ["services", "✂️", t("servicesPrices")],
+    ["colors", "🎨", t("colors")],
     ["arrange", "↕️", t("arrange")],
     ["availability", "🕑", t("availability")],
     ["reviews", "⭐", t("reviews")],
@@ -92,7 +93,8 @@ export default function Dashboard({ services, settings, setServices, setSettings
           )}
           {tab === "clients" && <Clients bookings={bookings} settings={settings} />}
           {tab === "money" && <Money bookings={bookings} settings={settings} />}
-          {tab === "services" && <ServicesPanel services={services} setServices={setServices} />}
+          {tab === "services" && <ServicesPanel services={services} setServices={setServices} settings={settings} />}
+          {tab === "colors" && <ColorsPanel settings={settings} setSettings={setSettings} />}
           {tab === "arrange" && <ArrangePanel services={services} settings={settings} setSettings={setSettings} />}
           {tab === "availability" && <AvailabilityPanel settings={settings} setSettings={setSettings} />}
           {tab === "reviews" && <div className="panelcol"><ReviewsManager /></div>}
@@ -116,7 +118,7 @@ function BookingCard({ b, settings, services = [], setStatus, onChanged }) {
   const { lang, t } = useLang();
   const dep = Math.round((b.price * settings.depositPct) / 100);
   const dateStr = fmtDateL(b.date, lang);
-  const svcName = tName(b.serviceName, lang);
+  const svcName = tName(b.serviceName, lang) + (b.color ? " · " + b.color : "");
   const conf = t("waConfirm", { name: b.clientName, service: svcName, date: dateStr, time: b.start, dep: dep.toLocaleString(), ip: settings.instapay });
   const rem = t("waRemind", { name: b.clientName, service: svcName, date: dateStr, time: b.start });
   const editable = b.status !== "done" && b.status !== "cancelled";
@@ -477,7 +479,7 @@ function ArrangePanel({ services, settings, setSettings }) {
   );
 }
 
-function ServicesPanel({ services, setServices }) {
+function ServicesPanel({ services, setServices, settings }) {
   const { t } = useLang();
   const [adding, setAdding] = useState(false);
   return (
@@ -485,13 +487,58 @@ function ServicesPanel({ services, setServices }) {
       <div className="sched-top">
         <button className="pink" onClick={() => setAdding((v) => !v)}>＋ {t("addServiceTitle")}</button>
       </div>
-      {adding && <AddService services={services} setServices={setServices} onDone={() => setAdding(false)} />}
-      {services.map((s) => <ServiceRow key={s.id} s={s} setServices={setServices} />)}
+      {adding && <AddService services={services} setServices={setServices} settings={settings} onDone={() => setAdding(false)} />}
+      {services.map((s) => <ServiceRow key={s.id} s={s} setServices={setServices} settings={settings} />)}
     </div>
   );
 }
 
-function ServiceRow({ s, setServices }) {
+function ColorsPanel({ settings, setSettings }) {
+  const { t } = useLang();
+  const [sets, setSets] = useState(() => JSON.parse(JSON.stringify(settings.colorSets || [])));
+
+  const save = async () => {
+    const clean = sets.filter((s) => s.name.trim()).map((s) => ({ ...s, name: s.name.trim(), colors: s.colors.filter((c) => c.name.trim()) }));
+    const ns = { ...settings, colorSets: clean };
+    await store.saveSettings(ns); setSettings(ns); setSets(JSON.parse(JSON.stringify(clean))); toast(t("saved"));
+  };
+  const addSet = () => setSets((s) => [...s, { id: uid(), name: "", colors: [] }]);
+  const removeSet = (i) => setSets((s) => s.filter((_, j) => j !== i));
+  const upd = (i, patch) => setSets((s) => s.map((x, j) => (j === i ? { ...x, ...patch } : x)));
+  const addColor = (i) => upd(i, { colors: [...sets[i].colors, { id: uid(), name: "", hex: "#1a1a1a" }] });
+  const updColor = (i, ci, patch) => upd(i, { colors: sets[i].colors.map((c, k) => (k === ci ? { ...c, ...patch } : c)) });
+  const rmColor = (i, ci) => upd(i, { colors: sets[i].colors.filter((_, k) => k !== ci) });
+
+  return (
+    <div className="panelcol">
+      <div className="sched-top"><button className="pink" onClick={addSet}>＋ {t("addColorSet")}</button></div>
+      <small className="note" style={{ marginBottom: 12 }}>{t("colorsHint")}</small>
+      {sets.length === 0 && <div className="card"><div className="empty">{t("noColorSets")}</div></div>}
+      {sets.map((set, i) => (
+        <div key={set.id} className="card" style={{ background: "var(--card-2)" }}>
+          <label>{t("setName")}</label>
+          <input value={set.name} onChange={(e) => upd(i, { name: e.target.value })} placeholder={t("setNamePh")} />
+          <div style={{ marginTop: 12 }}>
+            {set.colors.map((c, ci) => (
+              <div key={c.id} className="swrow">
+                <input type="color" value={c.hex} onChange={(e) => updColor(i, ci, { hex: e.target.value })} />
+                <input value={c.name} onChange={(e) => updColor(i, ci, { name: e.target.value })} placeholder={t("colorNamePh")} />
+                <button className="danger sm" onClick={() => rmColor(i, ci)}>✕</button>
+              </div>
+            ))}
+          </div>
+          <div className="acts" style={{ marginTop: 10 }}>
+            <button className="ghost sm" onClick={() => addColor(i)}>＋ {t("addColor")}</button>
+            <button className="danger sm" onClick={() => removeSet(i)}>{t("remove")}</button>
+          </div>
+        </div>
+      ))}
+      {sets.length > 0 && <button className="pink full" style={{ marginTop: 8 }} onClick={save}>{t("save")}</button>}
+    </div>
+  );
+}
+
+function ServiceRow({ s, setServices, settings }) {
   const { lang, t } = useLang();
   const inputRef = useRef(null);
   const [open, setOpen] = useState(false);
@@ -500,16 +547,21 @@ function ServiceRow({ s, setServices }) {
   const [name, setName] = useState(s.name);
   const [price, setPrice] = useState(s.price);
   const [dur, setDur] = useState(s.dur);
+  const [colorSet, setColorSet] = useState(s.colorSet || "");
   const [busy, setBusy] = useState(false);
   const img = s.img;
 
   const save = async () => {
     const origGroup = groupKey(s);
-    await store.saveService({ ...s, lane, group: group.trim(), name: name.trim(), price: +price, dur: +dur });
-    if (lane !== s.lane) {
-      // moving a style between sections moves all its size variants together
-      const all = await store.getServices();
-      for (const x of all) if (x.id !== s.id && groupKey(x) === origGroup && x.lane !== lane) await store.saveService({ ...x, lane });
+    await store.saveService({ ...s, lane, group: group.trim(), name: name.trim(), price: +price, dur: +dur, colorSet });
+    // a style's section + color set apply to all its size variants together
+    const all = await store.getServices();
+    for (const x of all) {
+      if (x.id === s.id || groupKey(x) !== origGroup) continue;
+      const patch = {};
+      if (x.lane !== lane) patch.lane = lane;
+      if ((x.colorSet || "") !== colorSet) patch.colorSet = colorSet;
+      if (Object.keys(patch).length) await store.saveService({ ...x, ...patch });
     }
     setServices(await store.getServices()); toast(t("saved"));
   };
@@ -540,6 +592,11 @@ function ServiceRow({ s, setServices }) {
           <select value={lane} onChange={(e) => setLane(e.target.value)}>
             {LANES.map((l) => <option key={l} value={l}>{laneLabel(l, lang, "full")}</option>)}
           </select>
+          <label style={{ marginTop: 10, display: "block" }}>{t("colorSet")}</label>
+          <select value={colorSet} onChange={(e) => setColorSet(e.target.value)}>
+            <option value="">{t("noColorsOpt")}</option>
+            {(settings.colorSets || []).map((cs) => <option key={cs.id} value={cs.id}>{cs.name}</option>)}
+          </select>
           <label style={{ marginTop: 10, display: "block" }}>{t("category")}</label>
           <input value={group} onChange={(e) => setGroup(e.target.value)} />
           <label style={{ marginTop: 10, display: "block" }}>{t("styleName")}</label>
@@ -561,7 +618,7 @@ function ServiceRow({ s, setServices }) {
   );
 }
 
-function AddService({ services, setServices, onDone }) {
+function AddService({ services, setServices, settings, onDone }) {
   const { lang, t } = useLang();
   const inputRef = useRef(null);
   const [lane, setLane] = useState("Slay Studio");
@@ -569,6 +626,7 @@ function AddService({ services, setServices, onDone }) {
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
   const [dur, setDur] = useState("");
+  const [colorSet, setColorSet] = useState("");
   const [img, setImg] = useState("");
   const [busy, setBusy] = useState(false);
   const existing = [...new Set(services.map(groupKey))];
@@ -581,9 +639,9 @@ function AddService({ services, setServices, onDone }) {
   };
   const add = async () => {
     if (!group.trim() || !name.trim() || !price) return toast(t("catNamePrice"));
-    await store.addService({ id: uid(), lane, group: group.trim(), name: name.trim(), price: +price, dur: +dur || 120, img });
+    await store.addService({ id: uid(), lane, group: group.trim(), name: name.trim(), price: +price, dur: +dur || 120, img, colorSet });
     setServices(await store.getServices());
-    setGroup(""); setName(""); setPrice(""); setDur(""); setImg("");
+    setGroup(""); setName(""); setPrice(""); setDur(""); setImg(""); setColorSet("");
     toast(t("saved")); onDone && onDone();
   };
 
@@ -602,6 +660,11 @@ function AddService({ services, setServices, onDone }) {
       <label style={{ marginTop: 10, display: "block" }}>{t("section")}</label>
       <select value={lane} onChange={(e) => setLane(e.target.value)}>
         {LANES.map((l) => <option key={l} value={l}>{laneLabel(l, lang, "full")}</option>)}
+      </select>
+      <label style={{ marginTop: 10, display: "block" }}>{t("colorSet")}</label>
+      <select value={colorSet} onChange={(e) => setColorSet(e.target.value)}>
+        <option value="">{t("noColorsOpt")}</option>
+        {(settings.colorSets || []).map((cs) => <option key={cs.id} value={cs.id}>{cs.name}</option>)}
       </select>
       <input ref={inputRef} type="file" accept="image/*" onChange={onPhoto} style={{ display: "none" }} />
       <div className="acts" style={{ marginTop: 10, alignItems: "center" }}>

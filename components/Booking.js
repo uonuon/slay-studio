@@ -17,6 +17,13 @@ export default function Booking({ sel, setSel, settings, onBack, onBooked }) {
   const [start, setStart] = useState(null);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [color, setColor] = useState(null);
+
+  const colors = useMemo(() => {
+    const cs = (settings.colorSets || []).find((c) => c.id === service?.colorSet);
+    return cs?.colors || [];
+  }, [service, settings.colorSets]);
+  useEffect(() => { setColor(null); }, [service]);
 
   // 28-day strip
   const dates = useMemo(() => {
@@ -45,10 +52,12 @@ export default function Booking({ sel, setSel, settings, onBack, onBooked }) {
   }, [service, date, settings]);
 
   const submit = async () => {
+    if (colors.length && !color) return toast(t("pickColorFirst"));
     if (!start) return toast(t("pickTimeFirst"));
     if (!name.trim() || !phone.trim()) return toast(t("addNamePhone"));
     const b = {
       id: uid(), serviceId: service.id, serviceName: service.name, price: service.price, dur: service.dur,
+      color: color?.name || "", colorHex: color?.hex || "",
       date, start, clientName: name.trim(), clientPhone: phone.trim(), status: "pending", createdAt: Date.now(),
     };
     // Persist without the (heavy) image; pass it to the confirm screen in memory only.
@@ -104,6 +113,20 @@ export default function Booking({ sel, setSel, settings, onBack, onBooked }) {
             </div>
             <div className="amt">{LANE_META[service.lane]?.emoji || "✨"}</div>
           </div>
+
+          {colors.length > 0 && (
+            <div className="card">
+              <label>{t("chooseColor")}</label>
+              <div className="swatches">
+                {colors.map((c) => (
+                  <button key={c.id} type="button" className={"sw" + (color?.id === c.id ? " on" : "")} onClick={() => setColor(c)}>
+                    <span className="sw-dot" style={{ background: c.hex }} />
+                    <span className="sw-name">{c.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="card glass">
             <label>{t("pickDate")}</label>

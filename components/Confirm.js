@@ -8,7 +8,7 @@ export default function Confirm({ booking, settings, onHome }) {
   const b = booking;
   const dep = Math.round((b.price * settings.depositPct) / 100);
   const dateStr = fmtDateL(b.date, lang);
-  const svcName = tName(b.serviceName, lang);
+  const svcName = tName(b.serviceName, lang) + (b.color ? " · " + b.color : "");
   const msg = t("waClient", {
     service: svcName, date: dateStr, time: b.start, name: b.clientName, dep: dep.toLocaleString(),
   });
