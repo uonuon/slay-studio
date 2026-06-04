@@ -24,6 +24,7 @@ export default function Booking({ sel, setSel, settings, onBack, onBooked }) {
     return cs?.colors || [];
   }, [service, settings.colorSets]);
   useEffect(() => { setColor(null); }, [service]);
+  const total = (service?.price || 0) + (color?.price || 0);
 
   // 28-day strip
   const dates = useMemo(() => {
@@ -56,7 +57,7 @@ export default function Booking({ sel, setSel, settings, onBack, onBooked }) {
     if (!start) return toast(t("pickTimeFirst"));
     if (!name.trim() || !phone.trim()) return toast(t("addNamePhone"));
     const b = {
-      id: uid(), serviceId: service.id, serviceName: service.name, price: service.price, dur: service.dur,
+      id: uid(), serviceId: service.id, serviceName: service.name, price: service.price + (color?.price || 0), dur: service.dur,
       color: color?.name || "", colorHex: color?.hex || "",
       date, start, clientName: name.trim(), clientPhone: phone.trim(), status: "pending", createdAt: Date.now(),
     };
@@ -108,8 +109,8 @@ export default function Booking({ sel, setSel, settings, onBack, onBooked }) {
         <>
           <div className="summary" style={{ margin: "13px 0" }}>
             <div>
-              <div className="when">{service.price.toLocaleString()} {t("egp")}</div>
-              <div className="svcn">{tVariant(service, lang)} · {t("aboutHours", { n: hrs(service.dur) })}</div>
+              <div className="when">{total.toLocaleString()} {t("egp")}</div>
+              <div className="svcn">{tVariant(service, lang)}{color ? " · " + color.name : ""} · {t("aboutHours", { n: hrs(service.dur) })}</div>
             </div>
             <div className="amt">{LANE_META[service.lane]?.emoji || "✨"}</div>
           </div>
@@ -120,8 +121,10 @@ export default function Booking({ sel, setSel, settings, onBack, onBooked }) {
               <div className="swatches">
                 {colors.map((c) => (
                   <button key={c.id} type="button" className={"sw" + (color?.id === c.id ? " on" : "")} onClick={() => setColor(c)}>
-                    <span className="sw-dot" style={{ background: c.hex }} />
-                    <span className="sw-name">{c.name}</span>
+                    {c.img
+                      ? <span className="sw-dot img" style={{ backgroundImage: `url(${c.img})` }} />
+                      : <span className="sw-dot" style={{ background: c.hex }} />}
+                    <span className="sw-name">{c.name}{c.price > 0 ? <span className="sw-add"> +{c.price.toLocaleString()}</span> : null}</span>
                   </button>
                 ))}
               </div>

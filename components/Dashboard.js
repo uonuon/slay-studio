@@ -597,6 +597,25 @@ function ServicesPanel({ services, setServices, settings }) {
   );
 }
 
+function ColorEditRow({ c, t, onPatch, onRemove }) {
+  const ref = useRef(null);
+  const pick = async (e) => {
+    const f = e.target.files?.[0]; e.target.value = "";
+    if (!f) return;
+    try { onPatch({ img: await fileToDataURL(f, 600, 0.8) }); } catch (err) { toast("⚠︎"); }
+  };
+  return (
+    <div className="swrow">
+      <input ref={ref} type="file" accept="image/*" onChange={pick} style={{ display: "none" }} />
+      <button type="button" className="sw-imgbtn" onClick={() => ref.current?.click()}
+        style={c.img ? { backgroundImage: `url(${c.img})` } : { background: c.hex || "#333" }}>{!c.img && "＋"}</button>
+      <input value={c.name} onChange={(e) => onPatch({ name: e.target.value })} placeholder={t("colorNamePh")} />
+      <input className="sw-price" value={c.price || ""} onChange={(e) => onPatch({ price: +e.target.value || 0 })} placeholder={t("colorPricePh")} inputMode="numeric" />
+      <button className="danger sm" onClick={onRemove}>✕</button>
+    </div>
+  );
+}
+
 function ColorsPanel({ settings, setSettings }) {
   const { t } = useLang();
   const [sets, setSets] = useState(() => JSON.parse(JSON.stringify(settings.colorSets || [])));
@@ -609,7 +628,7 @@ function ColorsPanel({ settings, setSettings }) {
   const addSet = () => setSets((s) => [...s, { id: uid(), name: "", colors: [] }]);
   const removeSet = (i) => setSets((s) => s.filter((_, j) => j !== i));
   const upd = (i, patch) => setSets((s) => s.map((x, j) => (j === i ? { ...x, ...patch } : x)));
-  const addColor = (i) => upd(i, { colors: [...sets[i].colors, { id: uid(), name: "", hex: "#1a1a1a" }] });
+  const addColor = (i) => upd(i, { colors: [...sets[i].colors, { id: uid(), name: "", hex: "#1a1a1a", img: "", price: 0 }] });
   const updColor = (i, ci, patch) => upd(i, { colors: sets[i].colors.map((c, k) => (k === ci ? { ...c, ...patch } : c)) });
   const rmColor = (i, ci) => upd(i, { colors: sets[i].colors.filter((_, k) => k !== ci) });
 
@@ -624,11 +643,7 @@ function ColorsPanel({ settings, setSettings }) {
           <input value={set.name} onChange={(e) => upd(i, { name: e.target.value })} placeholder={t("setNamePh")} />
           <div style={{ marginTop: 12 }}>
             {set.colors.map((c, ci) => (
-              <div key={c.id} className="swrow">
-                <input type="color" value={c.hex} onChange={(e) => updColor(i, ci, { hex: e.target.value })} />
-                <input value={c.name} onChange={(e) => updColor(i, ci, { name: e.target.value })} placeholder={t("colorNamePh")} />
-                <button className="danger sm" onClick={() => rmColor(i, ci)}>✕</button>
-              </div>
+              <ColorEditRow key={c.id} c={c} t={t} onPatch={(p) => updColor(i, ci, p)} onRemove={() => rmColor(i, ci)} />
             ))}
           </div>
           <div className="acts" style={{ marginTop: 10 }}>
