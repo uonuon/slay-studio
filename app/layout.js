@@ -7,7 +7,7 @@ const TITLE = "Slay Studio — Braids in Fifth Settlement, New Cairo";
 const DESC = "Book braids, knotless, box braids & boho in Fifth Settlement, New Cairo. Pick your style and reserve online in minutes. احجزي ضفائرك أونلاين في التجمّع الخامس.";
 
 export const metadata = {
-  metadataBase: new URL("https://slay-studio.com"),
+  metadataBase: new URL("https://www.slay-studio.com"),
   title: { default: TITLE, template: "%s · Slay Studio" },
   description: DESC,
   applicationName: "Slay Studio",
@@ -17,7 +17,7 @@ export const metadata = {
     "ضفائر", "تجمع خامس", "القاهرة الجديدة", "صالون شعر", "نوتلس", "بوكس برايدز",
   ],
   manifest: "/site.webmanifest",
-  alternates: { canonical: "https://slay-studio.com" },
+  alternates: { canonical: "https://www.slay-studio.com" },
   robots: { index: true, follow: true },
   icons: {
     icon: [
@@ -31,7 +31,7 @@ export const metadata = {
     siteName: "Slay Studio",
     title: TITLE,
     description: DESC,
-    url: "https://slay-studio.com",
+    url: "https://www.slay-studio.com",
     locale: "ar_EG",
     alternateLocale: ["en_US"],
     images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Slay Studio" }],
@@ -50,8 +50,8 @@ const jsonLd = {
   "@context": "https://schema.org",
   "@type": "HairSalon",
   name: "Slay Studio",
-  image: "https://slay-studio.com/og-image.png",
-  url: "https://slay-studio.com",
+  image: "https://www.slay-studio.com/og-image.png",
+  url: "https://www.slay-studio.com",
   telephone: "+201555842544",
   priceRange: "$$",
   currenciesAccepted: "EGP",
