@@ -114,7 +114,7 @@ export default function Booking({ sel, setSel, settings, onBack, onBooked }) {
           <div className="summary" style={{ margin: "13px 0" }}>
             <div>
               <div className="when">{total.toLocaleString()} {t("egp")}</div>
-              <div className="svcn">{tVariant(service, lang)}{color ? " · " + color.name : ""} · {t("aboutHours", { n: hrs(service.dur) })}</div>
+              <div className="svcn">{tVariant(service, lang)}{color && <span> · {color.name}</span>} · {t("aboutHours", { n: hrs(service.dur) })}</div>
             </div>
             <div className="amt">{LANE_META[service.lane]?.emoji || "✨"}</div>
           </div>
