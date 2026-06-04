@@ -1,9 +1,14 @@
 "use client";
 import Script from "next/script";
+import { usePathname } from "next/navigation";
 import { Analytics as VercelAnalytics } from "@vercel/analytics/react";
 import { ANALYTICS } from "@/lib/config";
 
 export default function Analytics() {
+  const pathname = usePathname();
+  // Don't load pixels/analytics in the owner dashboard — avoids ad-blocker
+  // noise and keeps the owner's own visits out of the marketing stats.
+  if (pathname && pathname.startsWith("/admin")) return null;
   const { ga4, metaPixel, tiktokPixel } = ANALYTICS;
   return (
     <>

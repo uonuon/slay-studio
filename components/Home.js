@@ -12,7 +12,7 @@ function reviewJsonLd(reviews) {
     "@context": "https://schema.org",
     "@type": "HairSalon",
     name: "Slay Studio",
-    url: "https://www.slay-studio.com",
+    url: "https://slay-studio.com",
     aggregateRating: { "@type": "AggregateRating", ratingValue: avg.toFixed(1), reviewCount: count, bestRating: 5 },
   };
 }

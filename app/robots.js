@@ -5,6 +5,6 @@ export default function robots() {
       allow: "/",
       disallow: "/admin",
     },
-    sitemap: "https://www.slay-studio.com/sitemap.xml",
+    sitemap: "https://slay-studio.com/sitemap.xml",
   };
 }
