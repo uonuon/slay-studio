@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { LANE_META, LANES } from "@/lib/config";
 import { groupStyles, hrs } from "@/lib/util";
+import { cldImg, IMG } from "@/lib/img";
 import { store } from "@/lib/store";
 import { useLang, laneLabel, tName } from "@/lib/i18n";
 
@@ -86,7 +87,7 @@ export default function Home({ services, settings, onPick }) {
               return (
                 <div key={g.group} className="svc" onClick={() => onPick(g)}>
                   {img ? (
-                    <div className="thumb img" style={{ backgroundImage: `url(${img})` }} />
+                    <div className="thumb img" style={{ backgroundImage: `url(${cldImg(img, IMG.thumb)})` }} />
                   ) : (
                     <div className="thumb" style={{ background: LANE_META[L].grad }}>{LANE_META[L].emoji}</div>
                   )}
@@ -118,7 +119,7 @@ export default function Home({ services, settings, onPick }) {
                     <span className="on">{"★".repeat(rate)}</span><span className="dim">{"★".repeat(5 - rate)}</span>
                   </div>
                   {r.img
-                    ? <img src={r.img} alt="client review" loading="lazy" />
+                    ? <img src={cldImg(r.img, IMG.review)} alt="client review" loading="lazy" />
                     : (r.text ? <div className="rev-text">“{r.text}” <span className="rev-name">— {r.name}</span></div> : null)}
                 </div>
               );

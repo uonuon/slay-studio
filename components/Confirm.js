@@ -1,10 +1,14 @@
 "use client";
+import { useState } from "react";
 import { waLink } from "@/lib/util";
 import { track } from "@/lib/analytics";
+import { cldImg, IMG } from "@/lib/img";
 import { useLang, fmtDateL, tName } from "@/lib/i18n";
+import Lightbox from "./Lightbox";
 
 export default function Confirm({ booking, settings, onHome }) {
   const { lang, t } = useLang();
+  const [zoom, setZoom] = useState(null);
   const b = booking;
   const dep = Math.round((b.price * settings.depositPct) / 100);
   const dateStr = fmtDateL(b.date, lang);
@@ -23,7 +27,8 @@ export default function Confirm({ booking, settings, onHome }) {
         <h2 style={{ textAlign: "center", margin: "6px 0 0" }}>{t("almostBooked")}</h2>
       </div>
 
-      {b.img && <div className="styleimg" style={{ backgroundImage: `url(${b.img})` }} />}
+      {b.img && <div className="styleimg zoomable" style={{ backgroundImage: `url(${cldImg(b.img, IMG.hero)})` }} onClick={() => setZoom(cldImg(b.img, IMG.full))} />}
+      <Lightbox src={zoom} onClose={() => setZoom(null)} />
 
       <div className="card glass">
         <div className="summary" style={{ border: "none", background: "none", padding: 0 }}>

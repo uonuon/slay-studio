@@ -4,7 +4,9 @@ import { LANE_META } from "@/lib/config";
 import { store } from "@/lib/store";
 import { availableStarts, dstr, hrs, t2m, todayStr, uid, toast, isDayFullyBlocked } from "@/lib/util";
 import { track } from "@/lib/analytics";
+import { cldImg, IMG } from "@/lib/img";
 import { useLang, tVariant, dayShort } from "@/lib/i18n";
+import Lightbox from "./Lightbox";
 
 export default function Booking({ sel, setSel, settings, onBack, onBooked }) {
   const { lang, t } = useLang();
@@ -18,6 +20,7 @@ export default function Booking({ sel, setSel, settings, onBack, onBooked }) {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [color, setColor] = useState(null);
+  const [zoom, setZoom] = useState(null);
 
   const colors = useMemo(() => {
     const cs = (settings.colorSets || []).find((c) => c.id === service?.colorSet);
@@ -83,7 +86,8 @@ export default function Booking({ sel, setSel, settings, onBack, onBooked }) {
         <span className="s">{t("stStyle")}</span><span className="ln" /><span className="s on">{t("stTime")}</span><span className="ln" /><span className="s">{t("stYou")}</span>
       </div>
 
-      {styleImg && <div className="styleimg" style={{ backgroundImage: `url(${styleImg})` }} />}
+      {styleImg && <div className="styleimg zoomable" style={{ backgroundImage: `url(${cldImg(styleImg, IMG.hero)})` }} onClick={() => setZoom(cldImg(styleImg, IMG.full))} />}
+      <Lightbox src={zoom} onClose={() => setZoom(null)} />
 
       {group.opts.length > 1 && (
         <div className="card">
@@ -122,7 +126,7 @@ export default function Booking({ sel, setSel, settings, onBack, onBooked }) {
                 {colors.map((c) => (
                   <button key={c.id} type="button" className={"sw" + (color?.id === c.id ? " on" : "")} onClick={() => setColor(c)}>
                     {c.img
-                      ? <span className="sw-dot img" style={{ backgroundImage: `url(${c.img})` }} />
+                      ? <span className="sw-dot img" style={{ backgroundImage: `url(${cldImg(c.img, IMG.swatch)})` }} />
                       : <span className="sw-dot" style={{ background: c.hex }} />}
                     <span className="sw-name">{c.name}{c.price > 0 ? <span className="sw-add"> +{c.price.toLocaleString()}</span> : null}</span>
                   </button>

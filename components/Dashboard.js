@@ -3,7 +3,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { USE_FB } from "@/lib/firebase";
 import { LANES } from "@/lib/config";
 import { store } from "@/lib/store";
-import { todayStr, dstr, uid, waLink, toast, groupKey, groupStyles, normPhone, fileToDataURL } from "@/lib/util";
+import { todayStr, dstr, uid, waLink, toast, groupKey, groupStyles, normPhone } from "@/lib/util";
+import { uploadImage, cldImg, IMG } from "@/lib/img";
 import { useLang, fmtDateL, tName, dayShort, laneLabel } from "@/lib/i18n";
 
 function AdLang() {
@@ -602,13 +603,13 @@ function ColorEditRow({ c, t, onPatch, onRemove }) {
   const pick = async (e) => {
     const f = e.target.files?.[0]; e.target.value = "";
     if (!f) return;
-    try { onPatch({ img: await fileToDataURL(f, 600, 0.8) }); } catch (err) { toast("⚠︎"); }
+    try { onPatch({ img: await uploadImage(f) }); } catch (err) { toast("⚠︎"); }
   };
   return (
     <div className="swrow">
       <input ref={ref} type="file" accept="image/*" onChange={pick} style={{ display: "none" }} />
       <button type="button" className="sw-imgbtn" onClick={() => ref.current?.click()}
-        style={c.img ? { backgroundImage: `url(${c.img})` } : { background: c.hex || "#333" }}>{!c.img && "＋"}</button>
+        style={c.img ? { backgroundImage: `url(${cldImg(c.img, IMG.swatch)})` } : { background: c.hex || "#333" }}>{!c.img && "＋"}</button>
       <input value={c.name} onChange={(e) => onPatch({ name: e.target.value })} placeholder={t("colorNamePh")} />
       <input className="sw-price" value={c.price || ""} onChange={(e) => onPatch({ price: +e.target.value || 0 })} placeholder={t("colorPricePh")} inputMode="numeric" />
       <button className="danger sm" onClick={onRemove}>✕</button>
@@ -687,7 +688,7 @@ function ServiceRow({ s, setServices, settings }) {
   const onPhoto = async (e) => {
     const file = e.target.files?.[0]; e.target.value = "";
     if (!file) return; setBusy(true);
-    try { const url = await fileToDataURL(file); await store.saveService({ ...s, img: url }); setServices(await store.getServices()); toast(t("photoSaved")); }
+    try { const url = await uploadImage(file); await store.saveService({ ...s, img: url }); setServices(await store.getServices()); toast(t("photoSaved")); }
     catch (err) { toast("⚠︎"); }
     setBusy(false);
   };
@@ -697,7 +698,7 @@ function ServiceRow({ s, setServices, settings }) {
     <div className="erow">
       <div className="erow-head" onClick={() => setOpen((v) => !v)}>
         {img
-          ? <div className="thumb img" style={{ backgroundImage: `url(${img})`, width: 46, height: 46, flex: "0 0 46px" }} />
+          ? <div className="thumb img" style={{ backgroundImage: `url(${cldImg(img, IMG.thumb)})`, width: 46, height: 46, flex: "0 0 46px" }} />
           : <div className="thumb" style={{ background: "rgba(255,255,255,.06)", width: 46, height: 46, flex: "0 0 46px", fontSize: 19 }}>📷</div>}
         <div className="erow-info">
           <div className="erow-name">{tName(s.name, lang)}</div>
@@ -753,7 +754,7 @@ function AddService({ services, setServices, settings, onDone }) {
   const onPhoto = async (e) => {
     const file = e.target.files?.[0]; e.target.value = "";
     if (!file) return; setBusy(true);
-    try { setImg(await fileToDataURL(file)); } catch (err) { toast("⚠︎"); }
+    try { setImg(await uploadImage(file)); } catch (err) { toast("⚠︎"); }
     setBusy(false);
   };
   const add = async () => {
@@ -788,7 +789,7 @@ function AddService({ services, setServices, settings, onDone }) {
       <input ref={inputRef} type="file" accept="image/*" onChange={onPhoto} style={{ display: "none" }} />
       <div className="acts" style={{ marginTop: 10, alignItems: "center" }}>
         <button className="ghost sm" disabled={busy} onClick={() => inputRef.current?.click()}>{img ? t("changePhoto") : t("addPhoto")}</button>
-        {img && <div className="thumb img" style={{ backgroundImage: `url(${img})`, width: 40, height: 40, flex: "0 0 40px" }} />}
+        {img && <div className="thumb img" style={{ backgroundImage: `url(${cldImg(img, IMG.thumb)})`, width: 40, height: 40, flex: "0 0 40px" }} />}
       </div>
       <button className="pink full" style={{ marginTop: 10 }} onClick={add}>{t("addBtn")}</button>
     </div>
@@ -918,7 +919,7 @@ function ReviewsManager() {
   const pick = async (e) => {
     const file = e.target.files?.[0]; e.target.value = "";
     if (!file) return; setBusy(true);
-    try { setImg(await fileToDataURL(file, 1080, 0.78)); } catch (err) { toast("⚠︎"); }
+    try { setImg(await uploadImage(file)); } catch (err) { toast("⚠︎"); }
     setBusy(false);
   };
   const post = async () => {
@@ -938,7 +939,7 @@ function ReviewsManager() {
         <div className="card" style={{ margin: "0 0 10px", background: "var(--card-2)" }}>
           <input ref={inputRef} type="file" accept="image/*" onChange={pick} style={{ display: "none" }} />
           {img
-            ? <img src={img} alt="" style={{ width: "100%", borderRadius: 12, border: "1px solid var(--line)", marginBottom: 4 }} />
+            ? <img src={cldImg(img, IMG.review)} alt="" style={{ width: "100%", borderRadius: 12, border: "1px solid var(--line)", marginBottom: 4 }} />
             : <div className="empty" style={{ padding: "18px 10px" }}><span className="big">🖼️</span>{t("reviewScreenshotHint")}</div>}
           <label style={{ marginTop: 8, display: "block" }}>{t("rating")}</label>
           <Stars value={rating} onChange={setRating} />
@@ -960,14 +961,14 @@ function ReviewRow({ r, onDel }) {
     <div className="erow">
       <div className="erow-head" onClick={() => setOpen((v) => !v)}>
         {r.img
-          ? <div className="thumb img" style={{ backgroundImage: `url(${r.img})`, width: 46, height: 46, flex: "0 0 46px" }} />
+          ? <div className="thumb img" style={{ backgroundImage: `url(${cldImg(r.img, IMG.thumb)})`, width: 46, height: 46, flex: "0 0 46px" }} />
           : <div className="thumb" style={{ width: 46, height: 46, flex: "0 0 46px", fontSize: 18, color: "#f0c860" }}>★</div>}
         <div className="erow-info"><Stars value={r.rating || 5} size={15} /></div>
         <span className="erow-caret">{open ? "⌄" : "›"}</span>
       </div>
       {open && (
         <div className="erow-body">
-          {r.img && <img src={r.img} alt="" style={{ width: "100%", borderRadius: 12, border: "1px solid var(--line)", marginTop: 12 }} />}
+          {r.img && <img src={cldImg(r.img, IMG.review)} alt="" style={{ width: "100%", borderRadius: 12, border: "1px solid var(--line)", marginTop: 12 }} />}
           {r.text && <div className="meta" style={{ marginTop: 10 }}>{r.text}</div>}
           <div className="acts"><button className="danger sm" onClick={onDel}>{t("remove")}</button></div>
         </div>
