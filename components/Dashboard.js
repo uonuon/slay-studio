@@ -52,6 +52,7 @@ export default function Dashboard({ services, settings, setServices, setSettings
     ["sched", "🗓️", t("tabSchedule")],
     ["clients", "👥", t("tabClients")],
     ["money", "📊", t("tabMoney")],
+    ["materials", "📦", t("materials")],
   ];
   const MANAGE = [
     ["services", "✂️", t("servicesPrices")],
@@ -93,6 +94,7 @@ export default function Dashboard({ services, settings, setServices, setSettings
           )}
           {tab === "clients" && <Clients bookings={bookings} settings={settings} />}
           {tab === "money" && <Money bookings={bookings} settings={settings} />}
+          {tab === "materials" && <MaterialsPanel />}
           {tab === "services" && <ServicesPanel services={services} setServices={setServices} settings={settings} />}
           {tab === "colors" && <ColorsPanel settings={settings} setSettings={setSettings} />}
           {tab === "arrange" && <ArrangePanel services={services} settings={settings} setSettings={setSettings} />}
@@ -328,6 +330,108 @@ function Money({ bookings, settings }) {
       </div>
       {pend > 0 && (
         <div className="card"><div className="meta" style={{ color: "var(--warn)" }}>{t("pendingWaiting", { n: pend })}</div></div>
+      )}
+    </div>
+  );
+}
+
+function MaterialsPanel() {
+  const { t } = useLang();
+  const [list, setList] = useState([]);
+  const [adding, setAdding] = useState(false);
+  const load = async () => setList(await store.listMaterials());
+  useEffect(() => { load(); }, []);
+
+  const isLow = (m) => m.lowAt > 0 && (m.qty || 0) <= m.lowAt;
+  const sorted = [...list].sort((a, b) => (isLow(b) - isLow(a)) || a.name.localeCompare(b.name));
+  const lowCount = list.filter(isLow).length;
+
+  return (
+    <div className="panelcol">
+      <div className="sched-top"><button className="pink" onClick={() => setAdding((v) => !v)}>＋ {t("addMaterial")}</button></div>
+      {lowCount > 0 && (
+        <div className="card" style={{ borderColor: "rgba(236,200,115,.4)" }}>
+          <div className="meta" style={{ color: "var(--warn)" }}>⚠︎ {t("lowStockN", { n: lowCount })}</div>
+        </div>
+      )}
+      {adding && <MaterialForm onDone={() => { setAdding(false); load(); }} />}
+      {list.length === 0 && !adding && <div className="card"><div className="empty"><span className="big">📦</span>{t("noMaterials")}</div></div>}
+      {sorted.map((m) => <MaterialRow key={m.id} m={m} onChange={load} />)}
+    </div>
+  );
+}
+
+function MaterialForm({ onDone }) {
+  const { t } = useLang();
+  const [name, setName] = useState("");
+  const [qty, setQty] = useState("");
+  const [unit, setUnit] = useState("");
+  const [lowAt, setLowAt] = useState("");
+  const [note, setNote] = useState("");
+  const add = async () => {
+    if (!name.trim()) return toast(t("materialNeedName"));
+    await store.saveMaterial({ id: uid(), name: name.trim(), qty: +qty || 0, unit: unit.trim(), lowAt: +lowAt || 0, note: note.trim(), createdAt: Date.now() });
+    toast(t("saved")); onDone();
+  };
+  return (
+    <div className="card" style={{ margin: "0 0 10px", background: "var(--card-2)" }}>
+      <label>{t("materialName")}</label>
+      <input value={name} onChange={(e) => setName(e.target.value)} placeholder={t("materialNamePh")} />
+      <div className="row2" style={{ marginTop: 10 }}>
+        <div><label>{t("quantity")}</label><input value={qty} onChange={(e) => setQty(e.target.value)} inputMode="numeric" /></div>
+        <div><label>{t("unit")}</label><input value={unit} onChange={(e) => setUnit(e.target.value)} placeholder={t("unitPh")} /></div>
+      </div>
+      <label style={{ marginTop: 10, display: "block" }}>{t("lowAt")}</label>
+      <input value={lowAt} onChange={(e) => setLowAt(e.target.value)} inputMode="numeric" />
+      <label style={{ marginTop: 10, display: "block" }}>{t("blockNote")}</label>
+      <input value={note} onChange={(e) => setNote(e.target.value)} />
+      <button className="pink full" style={{ marginTop: 12 }} onClick={add}>{t("addBtn")}</button>
+    </div>
+  );
+}
+
+function MaterialRow({ m, onChange }) {
+  const { t } = useLang();
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState(m.name);
+  const [unit, setUnit] = useState(m.unit || "");
+  const [lowAt, setLowAt] = useState(m.lowAt || 0);
+  const [note, setNote] = useState(m.note || "");
+  const low = m.lowAt > 0 && (m.qty || 0) <= m.lowAt;
+
+  const adjust = async (d) => { await store.saveMaterial({ ...m, qty: Math.max(0, (m.qty || 0) + d) }); onChange(); };
+  const saveEdit = async () => { await store.saveMaterial({ ...m, name: name.trim(), unit: unit.trim(), lowAt: +lowAt || 0, note: note.trim() }); toast(t("saved")); onChange(); };
+  const del = async () => { await store.delMaterial(m.id); onChange(); };
+
+  return (
+    <div className={"erow" + (low ? " erow-low" : "")}>
+      <div className="erow-head" style={{ cursor: "default" }}>
+        <div className="qtyctl">
+          <button className="qbtn" onClick={() => adjust(-1)}>−</button>
+          <span className="qval">{m.qty || 0}</span>
+          <button className="qbtn" onClick={() => adjust(1)}>＋</button>
+        </div>
+        <div className="erow-info" style={{ cursor: "pointer" }} onClick={() => setOpen((v) => !v)}>
+          <div className="erow-name">{m.name}{low && <span className="badge b-pending" style={{ marginInlineStart: 7 }}>{t("low")}</span>}</div>
+          <div className="erow-sub">{m.unit || ""}{m.lowAt > 0 ? (m.unit ? " · " : "") + t("lowAt") + ": " + m.lowAt : ""}{m.note ? " · " + m.note : ""}</div>
+        </div>
+        <span className="erow-caret" style={{ cursor: "pointer" }} onClick={() => setOpen((v) => !v)}>{open ? "⌄" : "›"}</span>
+      </div>
+      {open && (
+        <div className="erow-body">
+          <label>{t("materialName")}</label>
+          <input value={name} onChange={(e) => setName(e.target.value)} />
+          <div className="row2" style={{ marginTop: 10 }}>
+            <div><label>{t("unit")}</label><input value={unit} onChange={(e) => setUnit(e.target.value)} /></div>
+            <div><label>{t("lowAt")}</label><input value={lowAt} onChange={(e) => setLowAt(e.target.value)} inputMode="numeric" /></div>
+          </div>
+          <label style={{ marginTop: 10, display: "block" }}>{t("blockNote")}</label>
+          <input value={note} onChange={(e) => setNote(e.target.value)} />
+          <div className="acts">
+            <button className="pink sm" onClick={saveEdit}>{t("save")}</button>
+            <button className="danger sm" onClick={del}>{t("remove")}</button>
+          </div>
+        </div>
       )}
     </div>
   );
