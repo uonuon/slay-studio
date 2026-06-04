@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { LANE_META } from "@/lib/config";
 import { store } from "@/lib/store";
-import { availableStarts, dstr, hrs, t2m, todayStr, uid, toast } from "@/lib/util";
+import { availableStarts, dstr, hrs, t2m, todayStr, uid, toast, isDayFullyBlocked } from "@/lib/util";
 import { track } from "@/lib/analytics";
 import { useLang, tVariant, dayShort } from "@/lib/i18n";
 
@@ -25,10 +25,11 @@ export default function Booking({ sel, setSel, settings, onBack, onBooked }) {
     for (let i = 0; i < 28; i++) {
       const cur = new Date(base);
       cur.setDate(base.getDate() + i);
-      arr.push({ str: dstr(cur), dow: cur.getDay(), dn: cur.getDate(), work: settings.workDays.includes(cur.getDay()) });
+      const str = dstr(cur);
+      arr.push({ str, dow: cur.getDay(), dn: cur.getDate(), work: settings.workDays.includes(cur.getDay()) && !isDayFullyBlocked(settings, str) });
     }
     return arr;
-  }, [settings.workDays]);
+  }, [settings.workDays, settings.blocks]);
 
   useEffect(() => {
     let alive = true;

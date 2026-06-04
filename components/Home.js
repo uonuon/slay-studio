@@ -17,11 +17,23 @@ function reviewJsonLd(reviews) {
   };
 }
 
-export default function Home({ services, onPick }) {
+export default function Home({ services, settings, onPick }) {
   const { lang, t } = useLang();
   const [filter, setFilter] = useState("all");
   const [reviews, setReviews] = useState([]);
   const grps = groupStyles(services);
+
+  // owner-defined ordering (with safe fallbacks)
+  const laneOrder = [...(settings?.laneOrder || LANES), ...LANES.filter((l) => !(settings?.laneOrder || LANES).includes(l))];
+  const groupOrder = settings?.groupOrder || {};
+  const orderedGroups = (lane) => {
+    const list = grps.filter((g) => g.lane === lane);
+    const ord = groupOrder[lane] || [];
+    return list.slice().sort((a, b) => {
+      const ia = ord.indexOf(a.group), ib = ord.indexOf(b.group);
+      return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
+    });
+  };
 
   useEffect(() => {
     (async () => { try { setReviews(await store.listReviews()); } catch (e) {} })();
@@ -35,7 +47,7 @@ export default function Home({ services, onPick }) {
 
       <div className="segwrap">
         <div className="seg">
-          {[["all", t("all")], ...LANES.map((l) => [l, laneLabel(l, lang, "short")])].map(([k, lab]) => (
+          {[["all", t("all")], ...laneOrder.map((l) => [l, laneLabel(l, lang, "short")])].map(([k, lab]) => (
             <button key={k} className={filter === k ? "on" : ""} onClick={() => setFilter(k)}>
               {lab}
             </button>
@@ -52,9 +64,9 @@ export default function Home({ services, onPick }) {
         </div>
       )}
 
-      {LANES.map((L) => {
+      {laneOrder.map((L) => {
         if (filter !== "all" && filter !== L) return null;
-        const list = grps.filter((g) => g.lane === L);
+        const list = orderedGroups(L);
         if (!list.length) return null;
         return (
           <div key={L}>

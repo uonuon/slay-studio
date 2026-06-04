@@ -1,9 +1,10 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { USE_FB } from "@/lib/firebase";
+import { LANES } from "@/lib/config";
 import { store } from "@/lib/store";
-import { todayStr, dstr, uid, waLink, toast, groupKey, normPhone, fileToDataURL } from "@/lib/util";
-import { useLang, fmtDateL, tName, dayShort } from "@/lib/i18n";
+import { todayStr, dstr, uid, waLink, toast, groupKey, groupStyles, normPhone, fileToDataURL } from "@/lib/util";
+import { useLang, fmtDateL, tName, dayShort, laneLabel } from "@/lib/i18n";
 
 function AdLang() {
   const { lang, setLang } = useLang();
@@ -54,6 +55,7 @@ export default function Dashboard({ services, settings, setServices, setSettings
   ];
   const MANAGE = [
     ["services", "✂️", t("servicesPrices")],
+    ["arrange", "↕️", t("arrange")],
     ["availability", "🕑", t("availability")],
     ["reviews", "⭐", t("reviews")],
     ["settings", "⚙️", t("studioSettings")],
@@ -91,6 +93,7 @@ export default function Dashboard({ services, settings, setServices, setSettings
           {tab === "clients" && <Clients bookings={bookings} settings={settings} />}
           {tab === "money" && <Money bookings={bookings} settings={settings} />}
           {tab === "services" && <ServicesPanel services={services} setServices={setServices} />}
+          {tab === "arrange" && <ArrangePanel services={services} settings={settings} setSettings={setSettings} />}
           {tab === "availability" && <AvailabilityPanel settings={settings} setSettings={setSettings} />}
           {tab === "reviews" && <div className="panelcol"><ReviewsManager /></div>}
           {tab === "settings" && <div className="panelcol"><StudioSettings settings={settings} setSettings={setSettings} /></div>}
@@ -358,6 +361,118 @@ function AvailabilityPanel({ settings, setSettings }) {
         <input value={step} onChange={(e) => setStep(e.target.value)} />
         <button className="pink full" style={{ marginTop: 12 }} onClick={saveAvail}>{t("saveAvailability")}</button>
       </div>
+      <TimeOff settings={settings} setSettings={setSettings} />
+    </div>
+  );
+}
+
+function TimeOff({ settings, setSettings }) {
+  const { lang, t } = useLang();
+  const [date, setDate] = useState("");
+  const [allDay, setAllDay] = useState(true);
+  const [from, setFrom] = useState("13:00");
+  const [to, setTo] = useState("14:00");
+  const [note, setNote] = useState("");
+  const blocks = (settings.blocks || []).slice().sort((a, b) => (a.date + (a.start || "")).localeCompare(b.date + (b.start || "")));
+
+  const add = async () => {
+    if (!date) return toast(t("blockNeedDate"));
+    const b = { id: uid(), date, allDay, note: note.trim(), ...(allDay ? {} : { start: from, end: to }) };
+    const ns = { ...settings, blocks: [...(settings.blocks || []), b] };
+    await store.saveSettings(ns); setSettings(ns); setNote(""); setDate(""); toast(t("saved"));
+  };
+  const remove = async (idv) => {
+    const ns = { ...settings, blocks: (settings.blocks || []).filter((x) => x.id !== idv) };
+    await store.saveSettings(ns); setSettings(ns);
+  };
+
+  return (
+    <div className="card glass" style={{ marginTop: 14 }}>
+      <div className="svcn" style={{ color: "#fff", fontSize: 17, marginBottom: 10 }}>{t("timeOff")}</div>
+      <label>{t("blockADate")}</label>
+      <input type="date" value={date} min={todayStr()} onChange={(e) => setDate(e.target.value)} />
+      <div className="chips" style={{ marginTop: 10 }}>
+        <div className={"chip" + (allDay ? " on" : "")} onClick={() => setAllDay(true)}><div className="cs">{t("allDay")}</div></div>
+        <div className={"chip" + (!allDay ? " on" : "")} onClick={() => setAllDay(false)}><div className="cs">{t("fromT")} – {t("toT")}</div></div>
+      </div>
+      {!allDay && (
+        <div className="row2" style={{ marginTop: 10 }}>
+          <div><label>{t("fromT")}</label><input value={from} onChange={(e) => setFrom(e.target.value)} placeholder="13:00" /></div>
+          <div><label>{t("toT")}</label><input value={to} onChange={(e) => setTo(e.target.value)} placeholder="14:00" /></div>
+        </div>
+      )}
+      <label style={{ marginTop: 10, display: "block" }}>{t("blockNote")}</label>
+      <input value={note} onChange={(e) => setNote(e.target.value)} />
+      <button className="pink full" style={{ marginTop: 12 }} onClick={add}>{t("blockBtn")}</button>
+
+      <div style={{ marginTop: 12 }}>
+        {blocks.length === 0
+          ? <div className="empty" style={{ padding: "12px" }}>{t("noBlocks")}</div>
+          : blocks.map((b) => (
+            <div key={b.id} className="bk bk-cancelled" style={{ marginTop: 8 }}>
+              <div className="top">
+                <div>
+                  <div className="when">{fmtDateL(b.date, lang)}</div>
+                  <div className="meta">{b.allDay ? t("allDay") : b.start + " – " + b.end}{b.note ? " · " + b.note : ""}</div>
+                </div>
+                <button className="danger sm" onClick={() => remove(b.id)}>{t("remove")}</button>
+              </div>
+            </div>
+          ))}
+      </div>
+    </div>
+  );
+}
+
+function ArrangePanel({ services, settings, setSettings }) {
+  const { lang, t } = useLang();
+  const grps = groupStyles(services);
+  const laneOrder = [...(settings.laneOrder || LANES), ...LANES.filter((l) => !(settings.laneOrder || LANES).includes(l))];
+
+  const save = async (patch) => { const ns = { ...settings, ...patch }; await store.saveSettings(ns); setSettings(ns); };
+  const moveLane = (i, dir) => {
+    const arr = laneOrder.slice(); const j = i + dir; if (j < 0 || j >= arr.length) return;
+    [arr[i], arr[j]] = [arr[j], arr[i]]; save({ laneOrder: arr });
+  };
+  const laneGroups = (lane) => {
+    const list = grps.filter((g) => g.lane === lane).map((g) => g.group);
+    const ord = (settings.groupOrder || {})[lane] || [];
+    return list.slice().sort((a, b) => { const ia = ord.indexOf(a), ib = ord.indexOf(b); return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib); });
+  };
+  const moveGroup = (lane, i, dir) => {
+    const arr = laneGroups(lane); const j = i + dir; if (j < 0 || j >= arr.length) return;
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+    save({ groupOrder: { ...(settings.groupOrder || {}), [lane]: arr } });
+  };
+
+  return (
+    <div className="panelcol">
+      <small className="note" style={{ marginBottom: 12 }}>{t("arrangeHint")}</small>
+      {laneOrder.map((lane, li) => {
+        const groups = laneGroups(lane);
+        return (
+          <div key={lane} className="arr-lane">
+            <div className="arr-lane-head">
+              <div className="arr-title">{laneLabel(lane, lang, "full")}</div>
+              <div className="arr-moves">
+                <button className="arr-btn" disabled={li === 0} onClick={() => moveLane(li, -1)}>↑</button>
+                <button className="arr-btn" disabled={li === laneOrder.length - 1} onClick={() => moveLane(li, 1)}>↓</button>
+              </div>
+            </div>
+            {groups.length === 0
+              ? <div className="empty" style={{ padding: "8px" }}>—</div>
+              : groups.map((g, gi) => (
+                <div key={g} className="arr-item">
+                  <span className="arr-name">{tName(g, lang)}</span>
+                  <div className="arr-moves">
+                    <button className="arr-btn" disabled={gi === 0} onClick={() => moveGroup(lane, gi, -1)}>↑</button>
+                    <button className="arr-btn" disabled={gi === groups.length - 1} onClick={() => moveGroup(lane, gi, 1)}>↓</button>
+                  </div>
+                </div>
+              ))}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -380,6 +495,7 @@ function ServiceRow({ s, setServices }) {
   const { lang, t } = useLang();
   const inputRef = useRef(null);
   const [open, setOpen] = useState(false);
+  const [lane, setLane] = useState(s.lane || "Slay Studio");
   const [group, setGroup] = useState(groupKey(s));
   const [name, setName] = useState(s.name);
   const [price, setPrice] = useState(s.price);
@@ -388,7 +504,13 @@ function ServiceRow({ s, setServices }) {
   const img = s.img;
 
   const save = async () => {
-    await store.saveService({ ...s, group: group.trim(), name: name.trim(), price: +price, dur: +dur });
+    const origGroup = groupKey(s);
+    await store.saveService({ ...s, lane, group: group.trim(), name: name.trim(), price: +price, dur: +dur });
+    if (lane !== s.lane) {
+      // moving a style between sections moves all its size variants together
+      const all = await store.getServices();
+      for (const x of all) if (x.id !== s.id && groupKey(x) === origGroup && x.lane !== lane) await store.saveService({ ...x, lane });
+    }
     setServices(await store.getServices()); toast(t("saved"));
   };
   const onPhoto = async (e) => {
@@ -414,7 +536,11 @@ function ServiceRow({ s, setServices }) {
       </div>
       {open && (
         <div className="erow-body">
-          <label>{t("category")}</label>
+          <label>{t("section")}</label>
+          <select value={lane} onChange={(e) => setLane(e.target.value)}>
+            {LANES.map((l) => <option key={l} value={l}>{laneLabel(l, lang, "full")}</option>)}
+          </select>
+          <label style={{ marginTop: 10, display: "block" }}>{t("category")}</label>
           <input value={group} onChange={(e) => setGroup(e.target.value)} />
           <label style={{ marginTop: 10, display: "block" }}>{t("styleName")}</label>
           <input value={name} onChange={(e) => setName(e.target.value)} />
@@ -436,7 +562,7 @@ function ServiceRow({ s, setServices }) {
 }
 
 function AddService({ services, setServices, onDone }) {
-  const { t } = useLang();
+  const { lang, t } = useLang();
   const inputRef = useRef(null);
   const [lane, setLane] = useState("Slay Studio");
   const [group, setGroup] = useState("");
@@ -473,10 +599,9 @@ function AddService({ services, setServices, onDone }) {
         <input value={price} onChange={(e) => setPrice(e.target.value)} placeholder={t("pricePh")} />
         <input value={dur} onChange={(e) => setDur(e.target.value)} placeholder={t("minutesPh")} />
       </div>
-      <select style={{ marginTop: 8 }} value={lane} onChange={(e) => setLane(e.target.value)}>
-        <option value="Slay Studio">Slay Studio</option>
-        <option value="Little Slays">Little Slays</option>
-        <option value="Signature">Signature</option>
+      <label style={{ marginTop: 10, display: "block" }}>{t("section")}</label>
+      <select value={lane} onChange={(e) => setLane(e.target.value)}>
+        {LANES.map((l) => <option key={l} value={l}>{laneLabel(l, lang, "full")}</option>)}
       </select>
       <input ref={inputRef} type="file" accept="image/*" onChange={onPhoto} style={{ display: "none" }} />
       <div className="acts" style={{ marginTop: 10, alignItems: "center" }}>

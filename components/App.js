@@ -57,7 +57,7 @@ export default function App() {
       {view === "book" && <TopBar title={sel.family ? tName(sel.family.group, lang) : ""} onBack={() => setView("home")} />}
       {view === "confirm" && <TopBar onBack={() => setView("home")} />}
       <div className="viewfade" key={view}>
-        {view === "home" && <Home services={services} onPick={goBook} />}
+        {view === "home" && <Home services={services} settings={settings} onPick={goBook} />}
         {view === "book" && (
           <Booking
             sel={sel}
