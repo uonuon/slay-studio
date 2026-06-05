@@ -10,6 +10,23 @@ import Home from "./Home";
 import Booking from "./Booking";
 import Confirm from "./Confirm";
 
+function SiteNav({ onBook }) {
+  const { lang, setLang, t } = useLang();
+  return (
+    <nav className="snav">
+      <div className="snav-in">
+        <div className="snav-brand">Slay Studio<span className="dot">.</span></div>
+        <div className="snav-sp" />
+        <div className="langtoggle">
+          <button className={lang === "ar" ? "on" : ""} onClick={() => setLang("ar")}>ع</button>
+          <button className={lang === "en" ? "on" : ""} onClick={() => setLang("en")}>EN</button>
+        </div>
+        <button className="snav-book" onClick={onBook}>{t("ctaBook")}</button>
+      </div>
+    </nav>
+  );
+}
+
 export default function App() {
   const { lang, t } = useLang();
   const [ready, setReady] = useState(false);
@@ -42,36 +59,63 @@ export default function App() {
     setView("confirm");
   };
 
+  const scrollToStyles = () => {
+    const el = typeof document !== "undefined" && document.getElementById("styles");
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    else if (typeof window !== "undefined") window.scrollTo({ top: 0 });
+  };
+
   if (!ready || !settings) {
     return (
-      <div className="wrap">
-        <Hero />
-        <div className="empty" style={{ marginTop: 40 }}>{t("loading")}</div>
+      <div className="site">
+        <SiteNav onBook={scrollToStyles} />
+        <div className="shell">
+          <Hero onBook={scrollToStyles} />
+          <div className="scard-empty" style={{ marginTop: 24 }}>{t("loading")}</div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="wrap">
-      {view === "home" && <Hero />}
-      {view === "book" && <TopBar title={sel.family ? tName(sel.family.group, lang) : ""} onBack={() => setView("home")} />}
-      {view === "confirm" && <TopBar onBack={() => setView("home")} />}
-      <div className="viewfade" key={view}>
-        {view === "home" && <Home services={services} settings={settings} onPick={goBook} />}
-        {view === "book" && (
-          <Booking
-            sel={sel}
-            setSel={setSel}
-            settings={settings}
-            onBack={() => setView("home")}
-            onBooked={onBooked}
-          />
+    <div className="site">
+      {view === "home" && <SiteNav onBook={scrollToStyles} />}
+
+      <div className="shell">
+        {view === "home" && (
+          <>
+            <Hero onBook={scrollToStyles} />
+            <div className="viewfade" key="home">
+              <Home services={services} settings={settings} onPick={goBook} />
+            </div>
+            <div className="sfoot">Slay Studio · <b>@braids.bymarmora</b> · Fifth Settlement, New Cairo</div>
+          </>
         )}
+
+        {view === "book" && (
+          <div className="formcol">
+            <TopBar title={sel.family ? tName(sel.family.group, lang) : ""} onBack={() => setView("home")} />
+            <div className="viewfade" key="book">
+              <Booking
+                sel={sel}
+                setSel={setSel}
+                settings={settings}
+                onBack={() => setView("home")}
+                onBooked={onBooked}
+              />
+            </div>
+          </div>
+        )}
+
         {view === "confirm" && (
-          <Confirm booking={sel.booking} settings={settings} onHome={() => setView("home")} />
+          <div className="formcol">
+            <TopBar onBack={() => setView("home")} />
+            <div className="viewfade" key="confirm">
+              <Confirm booking={sel.booking} settings={settings} onHome={() => setView("home")} />
+            </div>
+          </div>
         )}
       </div>
-      {view === "home" && <div className="foot">slay studio · <b>@braids.bymarmora</b></div>}
     </div>
   );
 }
