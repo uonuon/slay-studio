@@ -5,7 +5,7 @@ import { store } from "@/lib/store";
 import { availableStarts, dstr, hrs, t2m, todayStr, uid, toast, isDayFullyBlocked } from "@/lib/util";
 import { track } from "@/lib/analytics";
 import { cldImg, IMG } from "@/lib/img";
-import { useLang, tVariant, dayShort } from "@/lib/i18n";
+import { useLang, tVariant, tName, dayShort } from "@/lib/i18n";
 import Lightbox from "./Lightbox";
 
 export default function Booking({ sel, setSel, settings, onBack, onBooked }) {
@@ -80,14 +80,38 @@ export default function Booking({ sel, setSel, settings, onBack, onBooked }) {
     [t("evening"), (tm) => t2m(tm) >= 1020],
   ];
 
+  const prices = group.opts.map((o) => o.price);
+  const durs = group.opts.map((o) => o.dur);
+  const lo = Math.min(...prices), hi = Math.max(...prices);
+  const desc = service?.description || group.opts.find((o) => o.description)?.description || "";
+  const priceLabel = service ? total.toLocaleString() : (lo === hi ? lo.toLocaleString() : lo.toLocaleString() + "+");
+  const durLabel = service
+    ? t("aboutHours", { n: hrs(service.dur) })
+    : (Math.min(...durs) === Math.max(...durs) ? t("aboutHours", { n: hrs(durs[0]) }) : t("aboutHrsRange", { a: hrs(Math.min(...durs)), b: hrs(Math.max(...durs)) }));
+
   return (
-    <>
-      <div className="steps">
-        <span className="s">{t("stStyle")}</span><span className="ln" /><span className="s on">{t("stTime")}</span><span className="ln" /><span className="s">{t("stYou")}</span>
+    <div className="bookgrid">
+      <div className="book-media">
+        {styleImg
+          ? <div className="styleimg zoomable" style={{ backgroundImage: `url(${cldImg(styleImg, IMG.hero)})` }} onClick={() => setZoom(cldImg(styleImg, IMG.full))} />
+          : <div className="styleimg ph">{LANE_META[group.lane]?.emoji || "✨"}</div>}
       </div>
 
-      {styleImg && <div className="styleimg zoomable" style={{ backgroundImage: `url(${cldImg(styleImg, IMG.hero)})` }} onClick={() => setZoom(cldImg(styleImg, IMG.full))} />}
-      <Lightbox src={zoom} onClose={() => setZoom(null)} />
+      <div className="book-panel">
+        <div className="steps">
+          <span className="s">{t("stStyle")}</span><span className="ln" /><span className="s on">{t("stTime")}</span><span className="ln" /><span className="s">{t("stYou")}</span>
+        </div>
+
+        <div className="book-detail">
+          <h2 className="book-name">{tName(group.group, lang)}</h2>
+          {desc && <p className="book-desc">{desc}</p>}
+          <div className="book-metaline">
+            <span className="book-price">{priceLabel} <span className="cur">{t("egp")}</span></span>
+            <span className="book-dot">·</span>
+            <span className="book-dur">{durLabel}</span>
+            {color && <><span className="book-dot">·</span><span className="book-dur">{color.name}</span></>}
+          </div>
+        </div>
 
       {group.opts.length > 1 && (
         <div className="card">
@@ -111,14 +135,6 @@ export default function Booking({ sel, setSel, settings, onBack, onBooked }) {
         <div className="empty">{t("pickSizeFirst")}</div>
       ) : (
         <>
-          <div className="summary" style={{ margin: "13px 0" }}>
-            <div>
-              <div className="when">{total.toLocaleString()} {t("egp")}</div>
-              <div className="svcn">{tVariant(service, lang)}{color && <span> · {color.name}</span>} · {t("aboutHours", { n: hrs(service.dur) })}</div>
-            </div>
-            <div className="amt">{LANE_META[service.lane]?.emoji || "✨"}</div>
-          </div>
-
           {colors.length > 0 && (
             <div className="card">
               <label>{t("chooseColor")}</label>
@@ -199,6 +215,9 @@ export default function Booking({ sel, setSel, settings, onBack, onBooked }) {
           )}
         </>
       )}
-    </>
+      </div>
+
+      <Lightbox src={zoom} onClose={() => setZoom(null)} />
+    </div>
   );
 }

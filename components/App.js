@@ -80,6 +80,8 @@ export default function App() {
   return (
     <div className="site">
       {view === "home" && <SiteNav onBook={scrollToStyles} />}
+      {view === "book" && <TopBar title={sel.family ? tName(sel.family.group, lang) : ""} onBack={() => setView("home")} />}
+      {view === "confirm" && <TopBar onBack={() => setView("home")} />}
 
       <div className="shell">
         {view === "home" && (
@@ -93,24 +95,20 @@ export default function App() {
         )}
 
         {view === "book" && (
-          <div className="formcol">
-            <TopBar title={sel.family ? tName(sel.family.group, lang) : ""} onBack={() => setView("home")} />
-            <div className="viewfade" key="book">
-              <Booking
-                sel={sel}
-                setSel={setSel}
-                settings={settings}
-                onBack={() => setView("home")}
-                onBooked={onBooked}
-              />
-            </div>
+          <div className="viewfade" key="book">
+            <Booking
+              sel={sel}
+              setSel={setSel}
+              settings={settings}
+              onBack={() => setView("home")}
+              onBooked={onBooked}
+            />
           </div>
         )}
 
         {view === "confirm" && (
-          <div className="formcol">
-            <TopBar onBack={() => setView("home")} />
-            <div className="viewfade" key="confirm">
+          <div className="viewfade" key="confirm">
+            <div className="formcol">
               <Confirm booking={sel.booking} settings={settings} onHome={() => setView("home")} />
             </div>
           </div>

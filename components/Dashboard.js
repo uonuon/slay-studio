@@ -322,7 +322,7 @@ function Money({ bookings, settings }) {
       </div>
       <div className="card glass">
         <div className="meta" style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5, color: "var(--muted)" }}>
-          <span>{t("vsRent", { n: settings.rent.toLocaleString() })}</span><span style={{ color: "#fff" }}>{pct}%</span>
+          <span>{t("vsRent", { n: settings.rent.toLocaleString() })}</span><span style={{ color: "var(--ink)" }}>{pct}%</span>
         </div>
         <div className="bar"><i style={{ width: pct + "%" }} /></div>
         <small className="note">
@@ -494,7 +494,7 @@ function TimeOff({ settings, setSettings }) {
 
   return (
     <div className="card glass" style={{ marginTop: 14 }}>
-      <div className="svcn" style={{ color: "#fff", fontSize: 17, marginBottom: 10 }}>{t("timeOff")}</div>
+      <div className="svcn" style={{ color: "var(--ink)", fontSize: 17, marginBottom: 10 }}>{t("timeOff")}</div>
       <label>{t("blockADate")}</label>
       <input type="date" value={date} min={todayStr()} onChange={(e) => setDate(e.target.value)} />
       <div className="chips" style={{ marginTop: 10 }}>
@@ -667,19 +667,22 @@ function ServiceRow({ s, setServices, settings }) {
   const [price, setPrice] = useState(s.price);
   const [dur, setDur] = useState(s.dur);
   const [colorSet, setColorSet] = useState(s.colorSet || "");
+  const [desc, setDesc] = useState(s.description || "");
   const [busy, setBusy] = useState(false);
   const img = s.img;
 
   const save = async () => {
     const origGroup = groupKey(s);
-    await store.saveService({ ...s, lane, group: group.trim(), name: name.trim(), price: +price, dur: +dur, colorSet });
-    // a style's section + color set apply to all its size variants together
+    const description = desc.trim();
+    await store.saveService({ ...s, lane, group: group.trim(), name: name.trim(), price: +price, dur: +dur, colorSet, description });
+    // a style's section, color set + description apply to all its size variants together
     const all = await store.getServices();
     for (const x of all) {
       if (x.id === s.id || groupKey(x) !== origGroup) continue;
       const patch = {};
       if (x.lane !== lane) patch.lane = lane;
       if ((x.colorSet || "") !== colorSet) patch.colorSet = colorSet;
+      if ((x.description || "") !== description) patch.description = description;
       if (Object.keys(patch).length) await store.saveService({ ...x, ...patch });
     }
     setServices(await store.getServices()); toast(t("saved"));
@@ -698,7 +701,7 @@ function ServiceRow({ s, setServices, settings }) {
       <div className="erow-head" onClick={() => setOpen((v) => !v)}>
         {img
           ? <div className="thumb img" style={{ backgroundImage: `url(${cldImg(img, IMG.thumb)})`, width: 46, height: 46, flex: "0 0 46px" }} />
-          : <div className="thumb" style={{ background: "rgba(255,255,255,.06)", width: 46, height: 46, flex: "0 0 46px", fontSize: 19 }}>📷</div>}
+          : <div className="thumb" style={{ background: "var(--card-2)", width: 46, height: 46, flex: "0 0 46px", fontSize: 19 }}>📷</div>}
         <div className="erow-info">
           <div className="erow-name">{tName(s.name, lang)}</div>
           <div className="erow-sub">{tName(groupKey(s), lang)} · {s.price.toLocaleString()} {t("egp")} · {s.dur}m</div>
@@ -720,6 +723,8 @@ function ServiceRow({ s, setServices, settings }) {
           <input value={group} onChange={(e) => setGroup(e.target.value)} />
           <label style={{ marginTop: 10, display: "block" }}>{t("styleName")}</label>
           <input value={name} onChange={(e) => setName(e.target.value)} />
+          <label style={{ marginTop: 10, display: "block" }}>{t("styleDesc")}</label>
+          <textarea className="ta" rows={2} value={desc} onChange={(e) => setDesc(e.target.value)} placeholder={t("styleDescPh")} />
           <div className="row2" style={{ marginTop: 10 }}>
             <div><label>{t("priceLab")}</label><input value={price} onChange={(e) => setPrice(e.target.value)} /></div>
             <div><label>{t("minLab")}</label><input value={dur} onChange={(e) => setDur(e.target.value)} /></div>
@@ -746,6 +751,7 @@ function AddService({ services, setServices, settings, onDone }) {
   const [price, setPrice] = useState("");
   const [dur, setDur] = useState("");
   const [colorSet, setColorSet] = useState("");
+  const [desc, setDesc] = useState("");
   const [img, setImg] = useState("");
   const [busy, setBusy] = useState(false);
   const existing = [...new Set(services.map(groupKey))];
@@ -758,20 +764,22 @@ function AddService({ services, setServices, settings, onDone }) {
   };
   const add = async () => {
     if (!group.trim() || !name.trim() || !price) return toast(t("catNamePrice"));
-    await store.addService({ id: uid(), lane, group: group.trim(), name: name.trim(), price: +price, dur: +dur || 120, img, colorSet });
+    await store.addService({ id: uid(), lane, group: group.trim(), name: name.trim(), price: +price, dur: +dur || 120, img, colorSet, description: desc.trim() });
     setServices(await store.getServices());
-    setGroup(""); setName(""); setPrice(""); setDur(""); setImg(""); setColorSet("");
+    setGroup(""); setName(""); setPrice(""); setDur(""); setImg(""); setColorSet(""); setDesc("");
     toast(t("saved")); onDone && onDone();
   };
 
   return (
     <div className="card" style={{ margin: "8px 0", background: "var(--card-2)" }}>
-      <div className="svcn" style={{ color: "#fff", marginBottom: 8 }}>{t("addServiceTitle")}</div>
+      <div className="svcn" style={{ color: "var(--ink)", marginBottom: 8 }}>{t("addServiceTitle")}</div>
       <label>{t("category")}</label>
       <input list="ss-groups" value={group} onChange={(e) => setGroup(e.target.value)} placeholder={t("categoryPh")} />
       <datalist id="ss-groups">{existing.map((g) => <option key={g} value={g} />)}</datalist>
       <label style={{ marginTop: 10, display: "block" }}>{t("styleName")}</label>
       <input value={name} onChange={(e) => setName(e.target.value)} placeholder={t("styleNamePh")} />
+      <label style={{ marginTop: 10, display: "block" }}>{t("styleDesc")}</label>
+      <textarea className="ta" rows={2} value={desc} onChange={(e) => setDesc(e.target.value)} placeholder={t("styleDescPh")} />
       <div className="row2" style={{ marginTop: 8 }}>
         <input value={price} onChange={(e) => setPrice(e.target.value)} placeholder={t("pricePh")} />
         <input value={dur} onChange={(e) => setDur(e.target.value)} placeholder={t("minutesPh")} />

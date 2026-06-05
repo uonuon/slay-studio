@@ -4,9 +4,24 @@ import { useRouter } from "next/navigation";
 import { store } from "@/lib/store";
 import { USE_FB } from "@/lib/firebase";
 import { useLang } from "@/lib/i18n";
-import Hero from "./Hero";
 import Login from "./Login";
 import Dashboard from "./Dashboard";
+
+function AdminHead() {
+  const { t, lang, setLang } = useLang();
+  return (
+    <div className="adminhead">
+      <div className="ah-top">
+        <span className="ah-brand">Slay Studio<span className="dot">.</span></span>
+        <div className="langtoggle">
+          <button className={lang === "ar" ? "on" : ""} onClick={() => setLang("ar")}>ع</button>
+          <button className={lang === "en" ? "on" : ""} onClick={() => setLang("en")}>EN</button>
+        </div>
+      </div>
+      <span className="ah-sub">{t("ownerDashboard")}</span>
+    </div>
+  );
+}
 
 export default function AdminApp() {
   const router = useRouter();
@@ -46,7 +61,7 @@ export default function AdminApp() {
   if (!ready || !settings) {
     return (
       <div className="wrap">
-        <Hero subtitle={t("ownerDashboard")} />
+        <AdminHead />
         <div className="empty" style={{ marginTop: 40 }}>{t("loading")}</div>
       </div>
     );
@@ -55,7 +70,7 @@ export default function AdminApp() {
   if (!authed) {
     return (
       <div className="wrap">
-        <Hero subtitle={t("ownerDashboard")} />
+        <AdminHead />
         <div className="viewfade">
           <Login onBack={() => router.push("/")} onSuccess={onSuccess} />
         </div>

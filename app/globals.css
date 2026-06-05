@@ -516,7 +516,8 @@ body:has(.site){background:#F2EADF;display:block;padding:0;overflow-x:clip;}
 .site .revcard img{border-color:var(--line);box-shadow:var(--shadow);background:var(--card-2);}
 
 /* ════ inner screens: TopBar / Booking / Confirm re-skin ════ */
-.site .appbar{background:rgba(242,234,223,.82);border-bottom:1px solid var(--line);margin-inline:calc(var(--pad)*-1);padding-inline:var(--pad);}
+.site .appbar{display:block;width:100%;margin:0;padding:0;background:rgba(242,234,223,.82);border-bottom:1px solid var(--line);}
+.appbar-in{display:flex;align-items:center;gap:10px;max-width:1120px;margin:0 auto;padding:calc(11px + env(safe-area-inset-top)) var(--pad) 11px;}
 .site .tb-back{background:var(--card);border:1px solid var(--line-2);color:var(--ink);}
 .site .tb-back:hover{border-color:var(--sage);background:var(--sage-soft);}
 .site .tb-title{color:var(--ink);}
@@ -560,6 +561,27 @@ body:has(.site){background:#F2EADF;display:block;padding:0;overflow-x:clip;}
 .site .depbig{color:var(--ink);}
 .site .link:hover{color:var(--sage);}
 
+/* ── booking: product-detail layout (image left, choices right) ── */
+.bookgrid{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:34px;align-items:start;padding-top:20px;}
+.book-media{position:sticky;top:84px;}
+.bookgrid .styleimg{margin:0;width:100%;max-width:100%;max-height:none;aspect-ratio:4/5;}
+.styleimg.ph{display:flex;align-items:center;justify-content:center;font-size:64px;color:rgba(255,255,255,.85);background:linear-gradient(150deg,#EAE0D2,#D9CAB4);border:1px solid var(--line);border-radius:18px;}
+.book-panel{min-width:0;}
+.book-detail{margin:2px 0 2px;}
+.book-name{font-family:var(--serif);font-weight:500;font-style:normal;font-size:clamp(28px,3.3vw,38px);letter-spacing:-.6px;color:var(--ink);margin:6px 0 0;}
+.book-desc{color:var(--ink-soft);font-size:15.5px;line-height:1.62;margin:12px 0 0;max-width:52ch;}
+.book-metaline{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;margin-top:16px;font-size:14px;color:var(--muted);}
+.book-price{font-family:var(--serif);font-weight:600;font-size:24px;color:var(--ink);line-height:1;}
+.book-price .cur{font-family:var(--sans);font-size:12px;font-weight:600;color:var(--muted);letter-spacing:.5px;}
+.book-dot{color:var(--faint);}
+[dir="rtl"] .book-name{font-style:normal;}
+@media(max-width:760px){
+  .bookgrid{grid-template-columns:1fr;gap:16px;padding-top:12px;}
+  .book-media{position:static;}
+  .bookgrid .styleimg{max-width:420px;margin-inline:auto;}
+  .book-name{font-size:26px;}
+}
+
 /* ── responsive (mobile-first guards) ──────────────── */
 @media(max-width:880px){
   .hero2{grid-template-columns:1fr;gap:28px;padding:30px 0 16px;}
@@ -590,3 +612,135 @@ body:has(.site){background:#F2EADF;display:block;padding:0;overflow-x:clip;}
 @media(max-width:380px){
   .grid2{grid-template-columns:1fr;}
 }
+
+/* ════════════════════════════════════════════════════════════════════
+   ADMIN DASHBOARD + LOGIN — LIGHT "SOFT LUX" THEME
+   (scoped to .admin / .wrap, both admin-only surfaces)
+   ════════════════════════════════════════════════════════════════════ */
+.admin,.wrap{
+  --bg:#F2EADF;--ink:#241C16;--ink-soft:#4C3F35;--muted:#8C7C6C;--faint:#A99A89;
+  --line:rgba(36,28,22,.10);--line-2:rgba(36,28,22,.16);--card:#FBF7F0;--card-2:#F3EBDD;
+  --pink:#6E7B58;--pink-2:#869473;--blue:#B28A45;
+  --sage:#6E7B58;--sage-2:#869473;--sage-soft:#E7E9DE;--gold:#B28A45;--gold-2:#CDA968;--rose:#C28A78;
+  --ok:#5e7d52;--okbg:rgba(110,123,88,.16);--warn:#9a7b2f;--warnbg:rgba(205,169,104,.22);
+  --bad:#b4564a;--badbg:rgba(196,122,106,.16);
+  --shadow:0 30px 60px -34px rgba(74,50,24,.42);--shadow-sm:0 14px 30px -20px rgba(74,50,24,.40);
+}
+body:has(.admin),body:has(.wrap){background:#F2EADF;}
+.admin{color:var(--ink);}
+
+/* shared atoms */
+:is(.admin,.wrap) h2{color:var(--ink);}
+:is(.admin,.wrap) h2.sect::before{background:linear-gradient(180deg,var(--sage),var(--sage-2));}
+:is(.admin,.wrap) .card{background:var(--card);border-color:var(--line);}
+:is(.admin,.wrap) input,:is(.admin,.wrap) select,:is(.admin,.wrap) textarea,:is(.admin,.wrap) .ta{background:#fff;border-color:var(--line-2);color:var(--ink);}
+:is(.admin,.wrap) input:focus,:is(.admin,.wrap) select:focus,:is(.admin,.wrap) textarea:focus,:is(.admin,.wrap) .ta:focus{border-color:var(--sage);background:#fff;}
+:is(.admin,.wrap) .pink{background:linear-gradient(135deg,var(--sage),#5C6A48);color:#F7F1E8;box-shadow:0 12px 26px -16px rgba(92,106,72,.8);}
+:is(.admin,.wrap) .ghost{background:var(--card);border:1px solid var(--line-2);color:var(--ink);}
+:is(.admin,.wrap) .ghost.on{border-color:var(--sage);color:var(--sage);}
+:is(.admin,.wrap) .link:hover{color:var(--sage);}
+:is(.admin,.wrap) .collapse:hover h2{color:var(--sage);}
+:is(.admin,.wrap) .skel{background:linear-gradient(90deg,rgba(36,28,22,.05),rgba(36,28,22,.1),rgba(36,28,22,.05));background-size:200% 100%;}
+:is(.admin,.wrap) .thumb{box-shadow:inset 0 0 0 1px rgba(36,28,22,.08);}
+
+/* chips (time off) */
+:is(.admin,.wrap) .chip{background:var(--card);border-color:var(--line);}
+:is(.admin,.wrap) .chip.on{background:var(--sage-soft);border-color:var(--sage);}
+:is(.admin,.wrap) .chip .cs{color:var(--ink);}
+:is(.admin,.wrap) .chip .cp{color:var(--muted);}
+
+/* booking / client cards + done states */
+:is(.admin,.wrap) .bk{background:var(--card);border-color:var(--line);}
+:is(.admin,.wrap) .bk .when{color:var(--ink);}
+:is(.admin,.wrap) .bk-done::before{background:rgba(36,28,22,.22);}
+:is(.admin,.wrap) .b-done{background:rgba(36,28,22,.06);color:var(--muted);}
+
+/* tiles + progress bar */
+:is(.admin,.wrap) .tile{background:linear-gradient(180deg,#FFFDF8,#F3EBDD);border-color:var(--line);}
+:is(.admin,.wrap) .tile::before{background:linear-gradient(90deg,transparent,var(--gold),transparent);}
+:is(.admin,.wrap) .tile .num{color:var(--ink);}
+:is(.admin,.wrap) .bar{background:rgba(36,28,22,.08);}
+:is(.admin,.wrap) .bar i{background:linear-gradient(90deg,var(--sage),var(--sage-2));box-shadow:0 0 12px -2px var(--sage);}
+
+/* working-day pills */
+:is(.admin,.wrap) .day{background:var(--card);border-color:var(--line);color:var(--muted);}
+:is(.admin,.wrap) .day.on{background:linear-gradient(135deg,var(--sage),#5C6A48);color:#F7F1E8;border-color:transparent;}
+
+/* login */
+:is(.admin,.wrap) .login-badge{color:var(--sage);background:radial-gradient(circle at 50% 32%,rgba(110,123,88,.2),rgba(110,123,88,.05));border-color:rgba(110,123,88,.32);box-shadow:0 14px 40px -16px rgba(110,123,88,.5);}
+.wrap{box-shadow:0 0 0 1px rgba(36,28,22,.03), 0 40px 100px -60px rgba(74,50,24,.22);}
+
+/* language toggle */
+:is(.admin,.wrap) .langtoggle{background:rgba(36,28,22,.05);border-color:var(--line);}
+:is(.admin,.wrap) .langtoggle button{color:var(--muted);}
+:is(.admin,.wrap) .langtoggle button.on{background:var(--ink);color:#F7F1E8;}
+
+/* admin header (loading / login) */
+.adminhead{padding:18px 0 6px;}
+.ah-top{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.ah-brand{font-family:var(--serif);font-weight:600;font-size:24px;color:var(--ink);letter-spacing:-.4px;}
+.ah-brand .dot{color:var(--sage);}
+.ah-sub{display:block;font-size:10.5px;letter-spacing:2.6px;text-transform:uppercase;color:var(--faint);margin-top:10px;}
+
+/* sidebar */
+.admin .adside{background:linear-gradient(180deg,#FBF7F0,#F1E8DA);border-inline-end:1px solid var(--line);}
+.admin .adbrand{color:var(--ink);}
+.admin .adnav button{color:var(--muted);}
+.admin .adnav button:hover{background:var(--card-2);color:var(--ink);}
+.admin .adnav button.on{background:linear-gradient(135deg,rgba(110,123,88,.2),rgba(134,148,115,.1));color:var(--ink);box-shadow:inset 0 0 0 1px rgba(110,123,88,.3);}
+.admin .adnav-label{color:var(--faint);}
+.admin .adside-exit{border-color:var(--line);color:var(--muted);}
+.admin .adside-exit:hover{color:var(--bad);border-color:var(--badbg);}
+
+/* top bar */
+.admin .adtop{background:rgba(251,247,240,.82);border-bottom:1px solid var(--line);}
+.admin .adtop h1{color:var(--ink);}
+
+/* bottom nav (mobile) */
+.admin .adbottom{background:rgba(251,247,240,.92);border-top:1px solid var(--line);}
+.admin .adbottom .t{color:var(--muted);}
+.admin .adbottom .t.on{color:var(--sage);background:rgba(110,123,88,.12);}
+
+/* collapsible edit rows */
+:is(.admin,.wrap) .erow{background:var(--card);border-color:var(--line);}
+:is(.admin,.wrap) .erow-head:hover{background:var(--card-2);}
+:is(.admin,.wrap) .erow-name{color:var(--ink);}
+:is(.admin,.wrap) .erow-low{border-color:rgba(205,169,104,.5);}
+
+/* qty stepper */
+:is(.admin,.wrap) .qbtn{background:#fff;border-color:var(--line-2);color:var(--ink);}
+:is(.admin,.wrap) .qbtn:hover{border-color:var(--sage);}
+:is(.admin,.wrap) .qval{color:var(--ink);}
+:is(.admin,.wrap) .qpack{background:rgba(110,123,88,.16);border-color:rgba(110,123,88,.4);color:var(--sage);}
+:is(.admin,.wrap) .qpack:hover{background:rgba(110,123,88,.26);}
+
+/* arrange */
+:is(.admin,.wrap) .arr-lane{background:var(--card);border-color:var(--line);}
+:is(.admin,.wrap) .arr-title{color:var(--ink);}
+:is(.admin,.wrap) .arr-item{background:var(--card-2);border-color:var(--line);}
+:is(.admin,.wrap) .arr-name{color:var(--ink);}
+:is(.admin,.wrap) .arr-btn{background:#fff;border-color:var(--line-2);color:var(--ink);}
+:is(.admin,.wrap) .arr-btn:not(:disabled):hover{border-color:var(--sage);}
+
+/* colour-set editor */
+:is(.admin,.wrap) .sw-imgbtn{border-color:var(--line-2);color:var(--muted);}
+:is(.admin,.wrap) .sw-imgbtn:hover{border-color:var(--sage);}
+
+/* calendar */
+:is(.admin,.wrap) .cal{background:var(--card);border-color:var(--line);}
+:is(.admin,.wrap) .cal-title{color:var(--ink);}
+:is(.admin,.wrap) .cal-nav{background:var(--card-2);border-color:var(--line);color:var(--ink);}
+:is(.admin,.wrap) .cal-today{background:var(--card-2);border-color:var(--line);color:var(--muted);}
+:is(.admin,.wrap) .cal-today:hover{color:var(--sage);}
+:is(.admin,.wrap) .cal-cell{background:rgba(36,28,22,.035);color:var(--ink);}
+:is(.admin,.wrap) .cal-cell.empty{background:none;}
+:is(.admin,.wrap) .cal-cell:hover{border-color:var(--sage);}
+:is(.admin,.wrap) .cal-cell .cal-d{color:var(--muted);}
+:is(.admin,.wrap) .cal-cell.today{background:rgba(110,123,88,.1);}
+:is(.admin,.wrap) .cal-cell.today .cal-d{color:var(--sage);}
+:is(.admin,.wrap) .cal-cell.sel{border-color:var(--sage);background:rgba(110,123,88,.14);}
+:is(.admin,.wrap) .cal-cell.sel .cal-d{color:var(--sage);}
+:is(.admin,.wrap) .cal-ev.b-done{background:rgba(36,28,22,.06);color:var(--muted);}
+
+/* toast — sage for both surfaces */
+.toast{background:linear-gradient(135deg,#6E7B58,#5C6A48);color:#F7F1E8;}
