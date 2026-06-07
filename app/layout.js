@@ -58,10 +58,17 @@ const jsonLd = {
   description: DESC,
   address: {
     "@type": "PostalAddress",
+    streetAddress: "Villa 19, Nargis 5",
     addressLocality: "Fifth Settlement, New Cairo",
     addressRegion: "Cairo",
     addressCountry: "EG",
   },
+  geo: {
+    "@type": "GeoCoordinates",
+    latitude: 30.011137,
+    longitude: 31.464403,
+  },
+  hasMap: "https://www.google.com/maps?q=30.011137008666992,31.46440315246582&z=17&hl=en",
   areaServed: "New Cairo",
   sameAs: [SOCIALS.instagram, SOCIALS.tiktok],
   openingHoursSpecification: [

@@ -16,6 +16,7 @@ export default function Confirm({ booking, settings, onHome }) {
   const msg = t("waClient", {
     service: svcName, date: dateStr, time: b.start, name: b.clientName, dep: dep.toLocaleString(),
   });
+  const waMsg = settings.mapsUrl ? msg + "\n📍 " + settings.mapsUrl : msg;
 
   return (
     <>
@@ -38,7 +39,20 @@ export default function Confirm({ booking, settings, onHome }) {
           </div>
           <div className="amt">{b.price.toLocaleString()}</div>
         </div>
+        {b.promoCode && <div className="confirm-promo">{t("discountApplied", { code: b.promoCode, pct: b.discountPct })}</div>}
       </div>
+
+      {(settings.address || settings.addressEn || settings.mapsUrl) && (
+        <div className="card loc-card">
+          <div className="eyebrow">{t("ourStudio")}</div>
+          {(lang === "ar" ? settings.address : settings.addressEn) || settings.address || settings.addressEn ? (
+            <p className="loc-addr">{(lang === "ar" ? settings.address : settings.addressEn) || settings.address || settings.addressEn}</p>
+          ) : null}
+          {settings.mapsUrl && (
+            <a className="btn ghost full" href={settings.mapsUrl} target="_blank" rel="noopener noreferrer">{t("openInMaps")}</a>
+          )}
+        </div>
+      )}
 
       <div className="card deposit">
         <div className="eyebrow">{t("lockSlot")}</div>
@@ -46,7 +60,7 @@ export default function Confirm({ booking, settings, onHome }) {
         <p>{t("depositPara", { dep: dep.toLocaleString(), ip: settings.instapay })}</p>
       </div>
 
-      <a className="btn wa full glass" style={{ marginTop: 14 }} href={waLink(settings.whatsapp, msg)} target="_blank" rel="noopener noreferrer"
+      <a className="btn wa full glass" style={{ marginTop: 14 }} href={waLink(settings.whatsapp, waMsg)} target="_blank" rel="noopener noreferrer"
          onClick={() => track("whatsapp", { name: svcName, value: dep })}>
         {t("sendOnWa")}
       </a>

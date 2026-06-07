@@ -561,6 +561,21 @@ body:has(.site){background:#F2EADF;display:block;padding:0;overflow-x:clip;}
 .site .depbig{color:var(--ink);}
 .site .link:hover{color:var(--sage);}
 
+/* ── discount code (booking + confirm) ─────────────── */
+.book-was{font-size:15px;color:var(--faint);text-decoration:line-through;}
+.promo-ok{display:block;margin-top:7px;color:var(--sage);font-weight:600;font-size:13px;}
+.promo-bad{display:block;margin-top:7px;color:var(--bad);font-size:13px;}
+.confirm-promo{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line-2);color:var(--sage);font-weight:600;font-size:13px;}
+
+/* ── location card (confirm) + find-us (home) ──────── */
+.loc-card .eyebrow{color:var(--gold);}
+.loc-addr{margin:6px 0 12px;color:var(--ink);font-size:15px;line-height:1.55;}
+.findus{margin-top:46px;}
+.findus-body{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:22px 24px;box-shadow:var(--shadow-sm);}
+.findus-addr{margin:0;color:var(--ink);font-size:16px;line-height:1.55;}
+.findus-btn{flex:0 0 auto;background:linear-gradient(135deg,var(--sage),#5C6A48);color:#F7F1E8;border-radius:999px;padding:11px 20px;font-weight:600;font-size:14px;text-decoration:none;white-space:nowrap;box-shadow:0 14px 30px -16px rgba(92,106,72,.85);}
+.findus-btn:hover{filter:brightness(1.05);}
+
 /* ── booking: product-detail layout (image left, choices right) ── */
 .bookgrid{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:34px;align-items:start;padding-top:20px;}
 .book-media{position:sticky;top:84px;}

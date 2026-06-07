@@ -991,6 +991,28 @@ function StudioSettings({ settings, setSettings }) {
   const [dp, setDp] = useState(settings.depositPct);
   const [rt, setRt] = useState(settings.rent);
   const [rw, setRw] = useState(settings.rebookWeeks ?? 6);
+  const [addr, setAddr] = useState(settings.address || "");
+  const [addrEn, setAddrEn] = useState(settings.addressEn || "");
+  const [maps, setMaps] = useState(settings.mapsUrl || "");
+  const [colorsOn, setColorsOn] = useState(!!settings.colorsEnabled);
+  const [promos, setPromos] = useState(() => JSON.parse(JSON.stringify(settings.promos || [])));
+
+  const addPromo = () => setPromos((p) => [...p, { id: uid(), code: "", pct: 10, active: true }]);
+  const updPromo = (i, patch) => setPromos((p) => p.map((x, j) => (j === i ? { ...x, ...patch } : x)));
+  const rmPromo = (i) => setPromos((p) => p.filter((_, j) => j !== i));
+
+  const save = async () => {
+    const cleanPromos = promos
+      .filter((p) => (p.code || "").trim())
+      .map((p) => ({ ...p, code: p.code.trim().toUpperCase(), pct: Math.max(0, Math.min(100, +p.pct || 0)) }));
+    const ns = {
+      ...settings, whatsapp: wa, instapay: ip, depositPct: +dp, rent: +rt, rebookWeeks: +rw || 6,
+      address: addr.trim(), addressEn: addrEn.trim(), mapsUrl: maps.trim(),
+      colorsEnabled: colorsOn, promos: cleanPromos,
+    };
+    await store.saveSettings(ns); setSettings(ns); setPromos(JSON.parse(JSON.stringify(cleanPromos))); toast(t("saved"));
+  };
+
   return (
     <div>
       <label>{t("waCC")}</label>
@@ -1003,10 +1025,38 @@ function StudioSettings({ settings, setSettings }) {
       </div>
       <label style={{ marginTop: 10, display: "block" }}>{t("rebookWeeks")}</label>
       <input value={rw} onChange={(e) => setRw(e.target.value)} />
-      <button className="pink full" style={{ marginTop: 12 }} onClick={async () => {
-        const ns = { ...settings, whatsapp: wa, instapay: ip, depositPct: +dp, rent: +rt, rebookWeeks: +rw || 6 };
-        await store.saveSettings(ns); setSettings(ns); toast(t("saved"));
-      }}>{t("saveSettings")}</button>
+
+      {/* location */}
+      <label style={{ marginTop: 16, display: "block" }}>{t("studioAddress")}</label>
+      <input value={addr} onChange={(e) => setAddr(e.target.value)} placeholder={t("addressPh")} />
+      <label style={{ marginTop: 10, display: "block" }}>{t("studioAddressEn")}</label>
+      <input value={addrEn} onChange={(e) => setAddrEn(e.target.value)} placeholder={t("addressPh")} />
+      <label style={{ marginTop: 10, display: "block" }}>{t("mapsLink")}</label>
+      <input value={maps} onChange={(e) => setMaps(e.target.value)} placeholder={t("mapsLinkPh")} />
+
+      {/* colours toggle */}
+      <label className="switchrow" style={{ marginTop: 16, display: "flex", alignItems: "center", gap: 8 }}>
+        <input type="checkbox" checked={colorsOn} onChange={(e) => setColorsOn(e.target.checked)} />
+        <span>{t("showColors")}</span>
+      </label>
+      <small className="note">{t("showColorsHint")}</small>
+
+      {/* discount codes */}
+      <div className="adsub" style={{ marginTop: 18, fontWeight: 700 }}>{t("promosTitle")}</div>
+      <small className="note">{t("promosHint")}</small>
+      {promos.length === 0 && <div className="empty" style={{ marginTop: 8 }}>{t("noPromos")}</div>}
+      {promos.map((p, i) => (
+        <div key={p.id} className="promo-row" style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
+          <input value={p.code} onChange={(e) => updPromo(i, { code: e.target.value.toUpperCase() })} placeholder={t("codePh")} style={{ textTransform: "uppercase", flex: "1 1 120px" }} />
+          <input value={p.pct} onChange={(e) => updPromo(i, { pct: e.target.value })} inputMode="numeric" style={{ width: 64 }} />
+          <span style={{ opacity: 0.7 }}>{t("pctOffLabel")}</span>
+          <label style={{ display: "flex", alignItems: "center", gap: 4 }}><input type="checkbox" checked={!!p.active} onChange={(e) => updPromo(i, { active: e.target.checked })} />{t("activeLabel")}</label>
+          <button className="danger sm" onClick={() => rmPromo(i)}>{t("remove")}</button>
+        </div>
+      ))}
+      <button className="ghost sm" style={{ marginTop: 8 }} onClick={addPromo}>＋ {t("addPromo")}</button>
+
+      <button className="pink full" style={{ marginTop: 16 }} onClick={save}>{t("saveSettings")}</button>
     </div>
   );
 }

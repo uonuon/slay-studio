@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { LANE_META } from "@/lib/config";
 import { store } from "@/lib/store";
-import { availableStarts, dstr, hrs, t2m, todayStr, uid, toast, isDayFullyBlocked } from "@/lib/util";
+import { availableStarts, dstr, hrs, t2m, todayStr, uid, toast, isDayFullyBlocked, findPromo, applyPromo } from "@/lib/util";
 import { track } from "@/lib/analytics";
 import { cldImg, IMG } from "@/lib/img";
 import { useLang, tVariant, tName, dayShort } from "@/lib/i18n";
@@ -21,13 +21,17 @@ export default function Booking({ sel, setSel, settings, onBack, onBooked }) {
   const [phone, setPhone] = useState("");
   const [color, setColor] = useState(null);
   const [zoom, setZoom] = useState(null);
+  const [promoInput, setPromoInput] = useState("");
 
   const colors = useMemo(() => {
+    if (!settings.colorsEnabled) return [];                 // colour feature off → no picker / no add-on
     const cs = (settings.colorSets || []).find((c) => c.id === service?.colorSet);
     return cs?.colors || [];
-  }, [service, settings.colorSets]);
+  }, [service, settings.colorSets, settings.colorsEnabled]);
   useEffect(() => { setColor(null); }, [service]);
-  const total = (service?.price || 0) + (color?.price || 0);
+  const promo = useMemo(() => findPromo(settings, promoInput), [settings, promoInput]);
+  const base = (service?.price || 0) + (color?.price || 0);
+  const total = applyPromo(base, promo);
 
   // 28-day strip
   const dates = useMemo(() => {
@@ -60,8 +64,9 @@ export default function Booking({ sel, setSel, settings, onBack, onBooked }) {
     if (!start) return toast(t("pickTimeFirst"));
     if (!name.trim() || !phone.trim()) return toast(t("addNamePhone"));
     const b = {
-      id: uid(), serviceId: service.id, serviceName: service.name, price: service.price + (color?.price || 0), dur: service.dur,
+      id: uid(), serviceId: service.id, serviceName: service.name, price: total, dur: service.dur,
       color: color?.name || "", colorHex: color?.hex || "",
+      promoCode: promo?.code || "", discountPct: promo?.pct || 0,
       date, start, clientName: name.trim(), clientPhone: phone.trim(), status: "pending", createdAt: Date.now(),
     };
     // Persist without the (heavy) image; pass it to the confirm screen in memory only.
@@ -107,6 +112,7 @@ export default function Booking({ sel, setSel, settings, onBack, onBooked }) {
           {desc && <p className="book-desc">{desc}</p>}
           <div className="book-metaline">
             <span className="book-price">{priceLabel} <span className="cur">{t("egp")}</span></span>
+            {promo && service && <span className="book-was">{base.toLocaleString()}</span>}
             <span className="book-dot">·</span>
             <span className="book-dur">{durLabel}</span>
             {color && <><span className="book-dot">·</span><span className="book-dur">{color.name}</span></>}
@@ -209,6 +215,13 @@ export default function Booking({ sel, setSel, settings, onBack, onBooked }) {
               <input value={name} onChange={(e) => setName(e.target.value)} placeholder={t("fullName")} />
               <label style={{ marginTop: 12, display: "block" }}>{t("waNumber")}</label>
               <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="01X XXXX XXXX" inputMode="tel" />
+              <label style={{ marginTop: 12, display: "block" }}>{t("promoCode")}</label>
+              <input value={promoInput} onChange={(e) => setPromoInput(e.target.value)} placeholder={t("promoPh")} autoCapitalize="characters" style={{ textTransform: "uppercase" }} />
+              {promoInput.trim() && (
+                promo
+                  ? <small className="promo-ok">{t("promoApplied", { pct: promo.pct })} · {t("youSave", { n: (base - total).toLocaleString() })}</small>
+                  : <small className="promo-bad">{t("promoInvalid")}</small>
+              )}
               <button className="pink full" style={{ marginTop: 15 }} onClick={submit}>{t("confirmBooking")}</button>
               <small className="note">{t("depositNote")}</small>
             </div>

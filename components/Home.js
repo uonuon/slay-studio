@@ -51,6 +51,7 @@ export default function Home({ services, settings, onPick }) {
 
   // colour band — pull real shades from the owner's colour sets (skip if none)
   const swatches = useMemo(() => {
+    if (!settings?.colorsEnabled) return [];               // colour feature off → hide the homepage band
     const seen = new Set(), out = [];
     for (const cs of settings?.colorSets || [])
       for (const c of cs.colors || []) {
@@ -175,6 +176,21 @@ export default function Home({ services, settings, onPick }) {
           </div>
           <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(reviewJsonLd(sortedReviews)) }} />
         </div>
+      )}
+
+      {(settings?.address || settings?.addressEn || settings?.mapsUrl) && (
+        <section className="findus">
+          <div className="lane2-head">
+            <h2 className="lane2-title">{t("findUs")}</h2>
+            <span className="lane2-line" />
+          </div>
+          <div className="findus-body">
+            <p className="findus-addr">📍 {(lang === "ar" ? settings.address : settings.addressEn) || settings.address || settings.addressEn}</p>
+            {settings?.mapsUrl && (
+              <a className="findus-btn" href={settings.mapsUrl} target="_blank" rel="noopener noreferrer">{t("getDirections")}</a>
+            )}
+          </div>
+        </section>
       )}
     </>
   );
