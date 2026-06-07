@@ -50,6 +50,17 @@ export default function Home({ services, settings, onPick, mode = "studio", setM
 
   const sortedReviews = [...reviews].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
 
+  // enter the home-service flow and jump up to the styles to pick one
+  const goHomeService = () => {
+    if (setMode) setMode("home");
+    if (typeof document !== "undefined") {
+      setTimeout(() => {
+        const el = document.getElementById("styles");
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 60);
+    }
+  };
+
   // colour band — pull real shades from the owner's colour sets (skip if none)
   const swatches = useMemo(() => {
     if (!settings?.colorsEnabled) return [];               // colour feature off → hide the homepage band
@@ -65,16 +76,12 @@ export default function Home({ services, settings, onPick, mode = "studio", setM
 
   return (
     <>
-      {/* studio / home-service mode toggle */}
-      {setMode && (
-        <div className="modetoggle">
-          <div className="modeseg">
-            <button className={!home ? "on" : ""} onClick={() => setMode("studio")}>{t("inStudio")}</button>
-            <button className={home ? "on" : ""} onClick={() => setMode("home")}>🏠 {t("homeService")}</button>
-          </div>
+      {home && (
+        <div className="homehint">
+          <span>🏠 {t("homeServiceHint")}</span>
+          <button className="homehint-back" onClick={() => setMode && setMode("studio")}>{t("backToStudio")}</button>
         </div>
       )}
-      {home && <div className="homehint">{t("homeServiceHint")}</div>}
 
       {/* filter */}
       <div className="filterbar">
@@ -188,6 +195,16 @@ export default function Home({ services, settings, onPick, mode = "studio", setM
           </div>
           <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(reviewJsonLd(sortedReviews)) }} />
         </div>
+      )}
+
+      {setMode && !home && (
+        <section className="homecta">
+          <div className="homecta-copy">
+            <h3>{t("homeCtaTitle")}</h3>
+            <p>{t("homeCtaSub")}</p>
+          </div>
+          <button className="homecta-btn" onClick={goHomeService}>🏠 {t("homeCtaBtn")}</button>
+        </section>
       )}
 
       {(settings?.address || settings?.addressEn || settings?.mapsUrl) && (
