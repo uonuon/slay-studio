@@ -9,6 +9,10 @@ import Lightbox from "./Lightbox";
 export default function Confirm({ booking, settings, onHome }) {
   const { lang, t } = useLang();
   const [zoom, setZoom] = useState(null);
+  const [copied, setCopied] = useState(false);
+  const copyIp = async () => {
+    try { await navigator.clipboard.writeText(settings.instapay); setCopied(true); setTimeout(() => setCopied(false), 1500); } catch (e) {}
+  };
   const b = booking;
   const dep = Math.round((b.price * settings.depositPct) / 100);
   const dateStr = fmtDateL(b.date, lang);
@@ -58,6 +62,10 @@ export default function Confirm({ booking, settings, onHome }) {
         <div className="eyebrow">{t("lockSlot")}</div>
         <div className="depbig">{dep.toLocaleString()} <span>{t("egp")}</span></div>
         <p>{t("depositPara", { dep: dep.toLocaleString(), ip: settings.instapay })}</p>
+        <button type="button" className="ip-copy" onClick={copyIp}>
+          <span className="ip-num">{settings.instapay}</span>
+          <span className="ip-lab">{copied ? t("copied") : "⧉ " + t("copyTap")}</span>
+        </button>
       </div>
 
       <a className="btn wa full glass" style={{ marginTop: 14 }} href={waLink(settings.whatsapp, waMsg)} target="_blank" rel="noopener noreferrer"

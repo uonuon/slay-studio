@@ -30,6 +30,7 @@ export default function Booking({ sel, setSel, settings, onBack, onBooked }) {
   }, [service, settings.colorSets, settings.colorsEnabled]);
   useEffect(() => { setColor(null); }, [service]);
   const promo = useMemo(() => findPromo(settings, promoInput), [settings, promoInput]);
+  const offer = useMemo(() => (settings.promos || []).find((p) => p.active), [settings.promos]);
   const base = (service?.price || 0) + (color?.price || 0);
   const total = applyPromo(base, promo);
 
@@ -118,6 +119,8 @@ export default function Booking({ sel, setSel, settings, onBack, onBooked }) {
             {color && <><span className="book-dot">·</span><span className="book-dur">{color.name}</span></>}
           </div>
         </div>
+
+      {offer && <div className="promo-banner">{t("promoOffer", { pct: offer.pct, code: offer.code })}</div>}
 
       {group.opts.length > 1 && (
         <div className="card">
@@ -215,13 +218,15 @@ export default function Booking({ sel, setSel, settings, onBack, onBooked }) {
               <input value={name} onChange={(e) => setName(e.target.value)} placeholder={t("fullName")} />
               <label style={{ marginTop: 12, display: "block" }}>{t("waNumber")}</label>
               <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="01X XXXX XXXX" inputMode="tel" />
-              <label style={{ marginTop: 12, display: "block" }}>{t("promoCode")}</label>
-              <input value={promoInput} onChange={(e) => setPromoInput(e.target.value)} placeholder={t("promoPh")} autoCapitalize="characters" style={{ textTransform: "uppercase" }} />
-              {promoInput.trim() && (
-                promo
-                  ? <small className="promo-ok">{t("promoApplied", { pct: promo.pct })} · {t("youSave", { n: (base - total).toLocaleString() })}</small>
-                  : <small className="promo-bad">{t("promoInvalid")}</small>
-              )}
+              <div className="promo-box">
+                <label className="promo-label">{offer ? t("promoOffer", { pct: offer.pct, code: offer.code }) : t("promoCode")}</label>
+                <input value={promoInput} onChange={(e) => setPromoInput(e.target.value)} placeholder={t("promoPh")} autoCapitalize="characters" style={{ textTransform: "uppercase" }} />
+                {promoInput.trim() && (
+                  promo
+                    ? <div className="promo-ok">{t("promoApplied", { pct: promo.pct })} · {t("youSave", { n: (base - total).toLocaleString() })}</div>
+                    : <div className="promo-bad">{t("promoInvalid")}</div>
+                )}
+              </div>
               <button className="pink full" style={{ marginTop: 15 }} onClick={submit}>{t("confirmBooking")}</button>
               <small className="note">{t("depositNote")}</small>
             </div>
