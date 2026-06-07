@@ -30,7 +30,6 @@ export default function Booking({ sel, setSel, settings, onBack, onBooked }) {
   }, [service, settings.colorSets, settings.colorsEnabled]);
   useEffect(() => { setColor(null); }, [service]);
   const promo = useMemo(() => findPromo(settings, promoInput), [settings, promoInput]);
-  const offer = useMemo(() => (settings.promos || []).find((p) => p.active), [settings.promos]);
   const base = (service?.price || 0) + (color?.price || 0);
   const total = applyPromo(base, promo);
 
@@ -119,8 +118,6 @@ export default function Booking({ sel, setSel, settings, onBack, onBooked }) {
             {color && <><span className="book-dot">·</span><span className="book-dur">{color.name}</span></>}
           </div>
         </div>
-
-      {offer && <div className="promo-banner">{t("promoOffer", { pct: offer.pct, code: offer.code })}</div>}
 
       {group.opts.length > 1 && (
         <div className="card">
@@ -219,7 +216,7 @@ export default function Booking({ sel, setSel, settings, onBack, onBooked }) {
               <label style={{ marginTop: 12, display: "block" }}>{t("waNumber")}</label>
               <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="01X XXXX XXXX" inputMode="tel" />
               <div className="promo-box">
-                <label className="promo-label">{offer ? t("promoOffer", { pct: offer.pct, code: offer.code }) : t("promoCode")}</label>
+                <label className="promo-label">{t("promoCode")}</label>
                 <input value={promoInput} onChange={(e) => setPromoInput(e.target.value)} placeholder={t("promoPh")} autoCapitalize="characters" style={{ textTransform: "uppercase" }} />
                 {promoInput.trim() && (
                   promo

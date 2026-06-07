@@ -20,7 +20,8 @@ export default function Confirm({ booking, settings, onHome }) {
   const msg = t("waClient", {
     service: svcName, date: dateStr, time: b.start, name: b.clientName, dep: dep.toLocaleString(),
   });
-  const waMsg = settings.mapsUrl ? msg + "\n📍 " + settings.mapsUrl : msg;
+  const locName = (lang === "ar" ? settings.address : settings.addressEn) || settings.address || settings.addressEn;
+  const waMsg = settings.mapsUrl ? msg + "\n" + t("waLocationLine", { url: settings.mapsUrl }) : msg;
 
   return (
     <>
@@ -46,22 +47,11 @@ export default function Confirm({ booking, settings, onHome }) {
         {b.promoCode && <div className="confirm-promo">{t("discountApplied", { code: b.promoCode, pct: b.discountPct })}</div>}
       </div>
 
-      {(settings.address || settings.addressEn || settings.mapsUrl) && (
-        <div className="card loc-card">
-          <div className="eyebrow">{t("ourStudio")}</div>
-          {(lang === "ar" ? settings.address : settings.addressEn) || settings.address || settings.addressEn ? (
-            <p className="loc-addr">{(lang === "ar" ? settings.address : settings.addressEn) || settings.address || settings.addressEn}</p>
-          ) : null}
-          {settings.mapsUrl && (
-            <a className="btn ghost full" href={settings.mapsUrl} target="_blank" rel="noopener noreferrer">{t("openInMaps")}</a>
-          )}
-        </div>
-      )}
-
       <div className="card deposit">
-        <div className="eyebrow">{t("lockSlot")}</div>
+        <div className="eyebrow">{t("depositTitle")}</div>
         <div className="depbig">{dep.toLocaleString()} <span>{t("egp")}</span></div>
         <p>{t("depositPara", { dep: dep.toLocaleString(), ip: settings.instapay })}</p>
+        <div className="ip-label">{t("instapayNumberLabel")}</div>
         <button type="button" className="ip-copy" onClick={copyIp}>
           <span className="ip-num">{settings.instapay}</span>
           <span className="ip-lab">{copied ? t("copied") : "⧉ " + t("copyTap")}</span>
@@ -72,6 +62,17 @@ export default function Confirm({ booking, settings, onHome }) {
          onClick={() => track("whatsapp", { name: svcName, value: dep })}>
         {t("sendOnWa")}
       </a>
+
+      {(locName || settings.mapsUrl) && (
+        <div className="card loc-card" style={{ marginTop: 14 }}>
+          <div className="eyebrow">{t("ourStudio")}</div>
+          {locName ? <p className="loc-addr">{locName}</p> : null}
+          {settings.mapsUrl && (
+            <a className="btn ghost full" href={settings.mapsUrl} target="_blank" rel="noopener noreferrer">{t("openInMaps")}</a>
+          )}
+        </div>
+      )}
+
       <button className="ghost full" style={{ marginTop: 9 }} onClick={onHome}>{t("backToStyles")}</button>
     </>
   );

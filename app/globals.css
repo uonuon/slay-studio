@@ -563,18 +563,20 @@ body:has(.site){background:#F2EADF;display:block;padding:0;overflow-x:clip;}
 
 /* ── discount code (booking + confirm) ─────────────── */
 .book-was{font-size:15px;color:var(--faint);text-decoration:line-through;}
-.promo-banner{margin-top:16px;background:linear-gradient(135deg,var(--gold),var(--gold-2));color:#fff;border-radius:14px;padding:13px 16px;font-weight:800;font-size:clamp(15px,2.4vw,17px);letter-spacing:.2px;text-align:center;box-shadow:0 14px 30px -16px rgba(178,138,69,.9);}
-.promo-box{margin-top:14px;background:rgba(178,138,69,.10);border:1.5px solid var(--gold);border-radius:14px;padding:14px;}
-.promo-label{display:block;color:var(--gold);font-weight:800;font-size:15px;margin:0 0 8px;}
-.promo-box input{background:#fff;font-weight:700;letter-spacing:1px;}
-.promo-ok{margin-top:9px;color:var(--sage);font-weight:800;font-size:16px;}
-.promo-bad{margin-top:9px;color:var(--bad);font-weight:600;font-size:14px;}
+.promo-box{margin-top:12px;}
+.promo-label{display:block;color:var(--muted);font-weight:600;font-size:13px;margin:0 0 6px;}
+.promo-box input{text-transform:uppercase;letter-spacing:1px;}
+.promo-ok{margin-top:8px;color:var(--sage);font-weight:700;font-size:14px;}
+.promo-bad{margin-top:8px;color:var(--bad);font-weight:600;font-size:13px;}
 .confirm-promo{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line-2);color:var(--gold);font-weight:800;font-size:15px;}
 
-/* tap-to-copy Instapay number (deposit card) */
-.ip-copy{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;margin-top:12px;background:#fff;border:1.5px dashed var(--gold);border-radius:12px;padding:12px 14px;cursor:pointer;}
+/* deposit prominence + tap-to-copy Instapay number (deposit card) */
+.site .deposit{border-width:1.5px;}
+.site .depbig{font-size:clamp(34px,8vw,44px);}
+.ip-label{margin-top:14px;font-size:13px;font-weight:700;color:var(--gold);}
+.ip-copy{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;margin-top:6px;background:#fff;border:1.5px dashed var(--gold);border-radius:12px;padding:14px;cursor:pointer;}
 .ip-copy:hover{background:rgba(178,138,69,.06);}
-.ip-num{font-family:var(--serif);font-weight:700;font-size:19px;color:var(--ink);letter-spacing:1px;}
+.ip-num{font-family:var(--serif);font-weight:700;font-size:22px;color:var(--ink);letter-spacing:1px;}
 .ip-lab{font-size:12px;font-weight:700;color:var(--gold);white-space:nowrap;}
 
 /* ── location card (confirm) + find-us (home) ──────── */
