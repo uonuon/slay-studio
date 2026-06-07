@@ -86,7 +86,8 @@ export default function Booking({ sel, setSel, settings, onBack, onBooked }) {
     if (!addr.trim()) return toast(t("addAddress"));
     const svcName = tName(service.name, lang);
     const msg = t("waHome", {
-      service: svcName, date: fmtDateL(date, lang), address: addr.trim(),
+      service: svcName, price: homePrice > 0 ? ` — ${homePrice.toLocaleString()} ${t("egp")}` : "",
+      date: fmtDateL(date, lang), address: addr.trim(),
       name: name.trim(), phone: phone.trim(),
     });
     track("whatsapp", { name: "home:" + service.name });
@@ -104,6 +105,12 @@ export default function Booking({ sel, setSel, settings, onBack, onBooked }) {
   const prices = group.opts.map((o) => o.price);
   const durs = group.opts.map((o) => o.dur);
   const lo = Math.min(...prices), hi = Math.max(...prices);
+  // home-service prices (owner-set, separate from studio price); may be unset (0)
+  const homePrices = group.opts.map((o) => +o.homePrice || 0).filter((p) => p > 0);
+  const homePrice = +service?.homePrice || 0;
+  const homePriceLabel = service
+    ? (homePrice > 0 ? homePrice.toLocaleString() : "")
+    : (homePrices.length ? (Math.min(...homePrices) === Math.max(...homePrices) ? Math.min(...homePrices).toLocaleString() : Math.min(...homePrices).toLocaleString() + "+") : "");
   const desc = service?.description || group.opts.find((o) => o.description)?.description || "";
   const priceLabel = service ? total.toLocaleString() : (lo === hi ? lo.toLocaleString() : lo.toLocaleString() + "+");
   const durLabel = service
@@ -128,7 +135,9 @@ export default function Booking({ sel, setSel, settings, onBack, onBooked }) {
           {desc && <p className="book-desc">{desc}</p>}
           <div className="book-metaline">
             {home
-              ? <span className="book-homeprice">🏠 {t("priceAfterChat")}</span>
+              ? (homePriceLabel
+                  ? <><span className="book-price">{homePriceLabel} <span className="cur">{t("egp")}</span></span><span className="book-dot">·</span></>
+                  : <span className="book-homeprice">🏠 {t("priceAfterChat")}</span>)
               : <>
                   <span className="book-price">{priceLabel} <span className="cur">{t("egp")}</span></span>
                   {promo && service && <span className="book-was">{base.toLocaleString()}</span>}
@@ -150,7 +159,7 @@ export default function Booking({ sel, setSel, settings, onBack, onBooked }) {
                 onClick={() => { setService(o); setSel((s) => ({ ...s, service: o })); }}
               >
                 <div className="cs">{tVariant(o, lang)}</div>
-                <div className="cp">{home ? `${hrs(o.dur)}h` : `${o.price.toLocaleString()} · ${hrs(o.dur)}h`}</div>
+                <div className="cp">{home ? (+o.homePrice ? `${(+o.homePrice).toLocaleString()} · ${hrs(o.dur)}h` : `${hrs(o.dur)}h`) : `${o.price.toLocaleString()} · ${hrs(o.dur)}h`}</div>
               </div>
             ))}
           </div>

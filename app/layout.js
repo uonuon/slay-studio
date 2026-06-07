@@ -83,7 +83,7 @@ const jsonLd = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="ar" dir="rtl" translate="no">
+    <html lang="en" dir="ltr" translate="no">
       <head>
         {/* App has its own AR/EN toggle — stop browser auto-translate, which
             rewrites text nodes and crashes React (insertBefore NotFoundError). */}

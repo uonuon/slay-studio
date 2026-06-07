@@ -145,7 +145,12 @@ export default function Home({ services, settings, onPick, mode = "studio", setM
                         <div className="scard-meta">{sub}</div>
                         <div className="scard-foot">
                           {home
-                            ? <div className="price2 home">🏠 {t("homeService")}</div>
+                            ? (() => {
+                                const hp = g.opts.map((o) => +o.homePrice || 0).filter((p) => p > 0);
+                                return hp.length
+                                  ? <div className="price2"><span className="amt">{Math.min(...hp).toLocaleString()}</span> <span className="egp">{t("egp")}</span></div>
+                                  : <div className="price2 home">🏠 {t("homeService")}</div>;
+                              })()
                             : <div className="price2"><span className="amt">{lo.toLocaleString()}</span> <span className="egp">{t("egp")}</span></div>}
                           <div className="go2">→</div>
                         </div>
