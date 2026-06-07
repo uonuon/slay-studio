@@ -25,8 +25,9 @@ const LANE_GRAD = {
   "Signature": "linear-gradient(150deg,#c9a36a,#a9803f)",
 };
 
-export default function Home({ services, settings, onPick }) {
+export default function Home({ services, settings, onPick, mode = "studio", setMode }) {
   const { lang, t } = useLang();
+  const home = mode === "home";
   const [filter, setFilter] = useState("all");
   const [reviews, setReviews] = useState([]);
   const grps = groupStyles(services);
@@ -64,6 +65,17 @@ export default function Home({ services, settings, onPick }) {
 
   return (
     <>
+      {/* studio / home-service mode toggle */}
+      {setMode && (
+        <div className="modetoggle">
+          <div className="modeseg">
+            <button className={!home ? "on" : ""} onClick={() => setMode("studio")}>{t("inStudio")}</button>
+            <button className={home ? "on" : ""} onClick={() => setMode("home")}>🏠 {t("homeService")}</button>
+          </div>
+        </div>
+      )}
+      {home && <div className="homehint">{t("homeServiceHint")}</div>}
+
       {/* filter */}
       <div className="filterbar">
         <div className="seg2">
@@ -120,9 +132,9 @@ export default function Home({ services, settings, onPick }) {
                         <div className="scard-name">{tName(g.group, lang)}</div>
                         <div className="scard-meta">{sub}</div>
                         <div className="scard-foot">
-                          <div className="price2">
-                            <span className="amt">{lo.toLocaleString()}</span> <span className="egp">{t("egp")}</span>
-                          </div>
+                          {home
+                            ? <div className="price2 home">🏠 {t("homeService")}</div>
+                            : <div className="price2"><span className="amt">{lo.toLocaleString()}</span> <span className="egp">{t("egp")}</span></div>}
                           <div className="go2">→</div>
                         </div>
                       </div>

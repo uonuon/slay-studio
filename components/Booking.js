@@ -2,14 +2,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { LANE_META } from "@/lib/config";
 import { store } from "@/lib/store";
-import { availableStarts, dstr, hrs, t2m, todayStr, uid, toast, isDayFullyBlocked, findPromo, applyPromo } from "@/lib/util";
+import { availableStarts, dstr, hrs, t2m, todayStr, uid, toast, isDayFullyBlocked, findPromo, applyPromo, waLink } from "@/lib/util";
 import { track } from "@/lib/analytics";
 import { cldImg, IMG } from "@/lib/img";
-import { useLang, tVariant, tName, dayShort } from "@/lib/i18n";
+import { useLang, tVariant, tName, dayShort, fmtDateL } from "@/lib/i18n";
 import Lightbox from "./Lightbox";
 
 export default function Booking({ sel, setSel, settings, onBack, onBooked }) {
   const { lang, t } = useLang();
+  const home = sel.mode === "home"; // home-service request: no price/slot/deposit, ends in WhatsApp
   const group = sel.family; // category object: { group, lane, opts: [{...service, variant}] }
   const groupImg = group.opts.find((o) => o.img)?.img;
   const [service, setService] = useState(sel.service || null);
@@ -22,6 +23,7 @@ export default function Booking({ sel, setSel, settings, onBack, onBooked }) {
   const [color, setColor] = useState(null);
   const [zoom, setZoom] = useState(null);
   const [promoInput, setPromoInput] = useState("");
+  const [addr, setAddr] = useState("");
 
   const colors = useMemo(() => {
     if (!settings.colorsEnabled) return [];                 // colour feature off → no picker / no add-on
@@ -77,6 +79,20 @@ export default function Booking({ sel, setSel, settings, onBack, onBooked }) {
     } catch (e) { toast(t("slotTaken")); setStart(null); }
   };
 
+  // Home-service request → open WhatsApp with style + preferred date + address.
+  // No booking is saved; the owner adds it (with the agreed price) after chatting.
+  const submitHome = () => {
+    if (!name.trim() || !phone.trim()) return toast(t("addNamePhone"));
+    if (!addr.trim()) return toast(t("addAddress"));
+    const svcName = tName(service.name, lang);
+    const msg = t("waHome", {
+      service: svcName, date: fmtDateL(date, lang), address: addr.trim(),
+      name: name.trim(), phone: phone.trim(),
+    });
+    track("whatsapp", { name: "home:" + service.name });
+    if (typeof window !== "undefined") window.open(waLink(settings.whatsapp, msg), "_blank", "noopener");
+  };
+
   const styleImg = service?.img || groupImg;
 
   const groups = [
@@ -111,9 +127,13 @@ export default function Booking({ sel, setSel, settings, onBack, onBooked }) {
           <h2 className="book-name">{tName(group.group, lang)}</h2>
           {desc && <p className="book-desc">{desc}</p>}
           <div className="book-metaline">
-            <span className="book-price">{priceLabel} <span className="cur">{t("egp")}</span></span>
-            {promo && service && <span className="book-was">{base.toLocaleString()}</span>}
-            <span className="book-dot">·</span>
+            {home
+              ? <span className="book-homeprice">🏠 {t("priceAfterChat")}</span>
+              : <>
+                  <span className="book-price">{priceLabel} <span className="cur">{t("egp")}</span></span>
+                  {promo && service && <span className="book-was">{base.toLocaleString()}</span>}
+                  <span className="book-dot">·</span>
+                </>}
             <span className="book-dur">{durLabel}</span>
             {color && <><span className="book-dot">·</span><span className="book-dur">{color.name}</span></>}
           </div>
@@ -130,7 +150,7 @@ export default function Booking({ sel, setSel, settings, onBack, onBooked }) {
                 onClick={() => { setService(o); setSel((s) => ({ ...s, service: o })); }}
               >
                 <div className="cs">{tVariant(o, lang)}</div>
-                <div className="cp">{o.price.toLocaleString()} · {hrs(o.dur)}h</div>
+                <div className="cp">{home ? `${hrs(o.dur)}h` : `${o.price.toLocaleString()} · ${hrs(o.dur)}h`}</div>
               </div>
             ))}
           </div>
@@ -139,6 +159,35 @@ export default function Booking({ sel, setSel, settings, onBack, onBooked }) {
 
       {!service ? (
         <div className="empty">{t("pickSizeFirst")}</div>
+      ) : home ? (
+        <>
+          <div className="card glass">
+            <label>{t("preferredDate")}</label>
+            <div className="datestrip">
+              {dates.map((d) => (
+                <div
+                  key={d.str}
+                  className={"dchip" + (d.work ? "" : " off") + (d.str === date ? " on" : "")}
+                  tabIndex={d.work ? 0 : -1}
+                  onClick={() => d.work && setDate(d.str)}
+                >
+                  <div className="dw">{dayShort(d.dow, lang)}</div>
+                  <div className="dn">{d.dn}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="card glass">
+            <label>{t("homeAddress")}</label>
+            <textarea value={addr} onChange={(e) => setAddr(e.target.value)} placeholder={t("homeAddressPh")} rows={2} />
+            <label style={{ marginTop: 12, display: "block" }}>{t("yourName")}</label>
+            <input value={name} onChange={(e) => setName(e.target.value)} placeholder={t("fullName")} />
+            <label style={{ marginTop: 12, display: "block" }}>{t("waNumber")}</label>
+            <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="01X XXXX XXXX" inputMode="tel" />
+            <button className="btn wa full glass" style={{ marginTop: 15 }} onClick={submitHome}>{t("chatOnWa")}</button>
+            <small className="note">{t("priceAfterChat")}</small>
+          </div>
+        </>
       ) : (
         <>
           {colors.length > 0 && (

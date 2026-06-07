@@ -144,8 +144,9 @@ function BookingCard({ b, settings, services = [], setStatus, onChanged }) {
       <div className="top">
         <div>
           <div className="when">{dateStr} · {b.start}</div>
-          <div className="svcn">{svcName}</div>
+          <div className="svcn">{svcName} {b.homeService && <span className="home-tag">🏠 {t("homeBadge")}</span>}</div>
           <div className="meta">{b.clientName} · {b.clientPhone} · {b.price.toLocaleString()} {t("egp")}</div>
+          {b.homeService && b.address && <div className="meta">📍 {b.address}</div>}
         </div>
         <span className={"badge b-" + b.status}>{t("st_" + b.status)}</span>
       </div>
@@ -266,13 +267,18 @@ function AddForm({ services, onAdded }) {
   const [time, setTime] = useState("");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [home, setHome] = useState(false);
+  const [addr, setAddr] = useState("");
+  const [customPrice, setCustomPrice] = useState("");
 
   const add = async () => {
     const s = services.find((x) => x.id === svId);
     if (!s) return;
     if (!/^\d{1,2}:\d{2}$/.test(time.trim())) return toast(t("timeFmt"));
     const b = {
-      id: uid(), serviceId: s.id, serviceName: s.name, price: s.price, dur: s.dur,
+      id: uid(), serviceId: s.id, serviceName: s.name,
+      price: home ? (+customPrice || 0) : s.price, dur: s.dur,
+      homeService: home, address: home ? addr.trim() : "",
       date, start: time.trim(), clientName: name.trim() || "Walk-in", clientPhone: phone.trim(),
       status: "confirmed", createdAt: Date.now(),
     };
@@ -283,10 +289,22 @@ function AddForm({ services, onAdded }) {
 
   return (
     <div className="card glass">
-      <label>{t("service")}</label>
+      <label className="switchrow" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <input type="checkbox" checked={home} onChange={(e) => setHome(e.target.checked)} />
+        <span>🏠 {t("homeService")}</span>
+      </label>
+      <label style={{ marginTop: 10, display: "block" }}>{t("service")}</label>
       <select value={svId} onChange={(e) => setSvId(e.target.value)}>
-        {services.map((s) => <option key={s.id} value={s.id}>{tName(s.name, lang)} — {s.price}</option>)}
+        {services.map((s) => <option key={s.id} value={s.id}>{tName(s.name, lang)}{home ? "" : ` — ${s.price}`}</option>)}
       </select>
+      {home && (
+        <>
+          <label style={{ marginTop: 10, display: "block" }}>{t("customPriceLabel")}</label>
+          <input value={customPrice} onChange={(e) => setCustomPrice(e.target.value)} inputMode="numeric" placeholder="0" />
+          <label style={{ marginTop: 10, display: "block" }}>{t("homeAddress")}</label>
+          <textarea value={addr} onChange={(e) => setAddr(e.target.value)} placeholder={t("homeAddressPh")} rows={2} />
+        </>
+      )}
       <div className="row2" style={{ marginTop: 10 }}>
         <div><label>{t("date")}</label><input type="date" value={date} min={todayStr()} onChange={(e) => setDate(e.target.value)} /></div>
         <div><label>{t("time")}</label><input value={time} onChange={(e) => setTime(e.target.value)} placeholder="14:00" /></div>

@@ -34,6 +34,7 @@ export default function App() {
   const [services, setServices] = useState([]);
   const [settings, setSettings] = useState(null);
   const [sel, setSel] = useState({});
+  const [mode, setMode] = useState("studio"); // "studio" | "home"
 
   useEffect(() => {
     (async () => {
@@ -50,6 +51,7 @@ export default function App() {
       family,
       service: family.opts.length === 1 ? family.opts[0] : null,
       date: firstWorkingDay(settings),
+      mode,
     });
     setView("book");
   };
@@ -88,7 +90,7 @@ export default function App() {
           <>
             <Hero onBook={scrollToStyles} />
             <div className="viewfade" key="home">
-              <Home services={services} settings={settings} onPick={goBook} />
+              <Home services={services} settings={settings} onPick={goBook} mode={mode} setMode={setMode} />
             </div>
             <div className="sfoot">Slay Studio · <b>@braids.bymarmora</b> · Fifth Settlement, New Cairo</div>
           </>

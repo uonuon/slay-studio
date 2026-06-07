@@ -449,19 +449,35 @@ body:has(.site){background:#F2EADF;display:block;padding:0;overflow-x:clip;}
 .chip2{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:500;color:var(--ink-soft);background:var(--card);border:1px solid var(--line);border-radius:30px;padding:8px 13px;}
 .chip2 b{color:var(--ink);font-weight:700;}
 .t2-stars{color:var(--gold);letter-spacing:1px;}
-/* the arch — a clean editorial portrait frame nodding to the studio's fluted arch */
-.arch-wrap{position:relative;}
+/* the arch — refined double-line editorial portrait frame */
+.arch-wrap{position:relative;padding:13px;}
 .arch{position:relative;aspect-ratio:4/5;overflow:hidden;background:#ECE3D6;
-  border-radius:50% 50% 28px 28px / 32% 32% 28px 28px;
-  border:1px solid rgba(120,98,70,.16);
-  box-shadow:var(--shadow), inset 0 -54px 70px -42px rgba(54,40,26,.22);}
-.arch-photo{position:absolute;inset:0;background-size:cover;background-position:50% 0%;}
+  border-radius:50% 50% 18px 18px / 42% 42% 14px 14px;
+  box-shadow:var(--shadow), inset 0 -64px 84px -46px rgba(54,40,26,.32);
+  z-index:1;}
+.arch-photo{position:absolute;inset:0;background-size:cover;background-position:50% 26%;
+  transition:transform .9s cubic-bezier(.2,.7,.2,1);}
+.arch-wrap:hover .arch-photo{transform:scale(1.045);}
+/* inner gold hairline, hugging the photo's arch exactly */
+.arch::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:2;
+  border-radius:inherit;box-shadow:inset 0 0 0 1.5px rgba(178,138,69,.85);}
+/* outer gold hairline, offset — the second frame line */
+.arch-wrap::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:0;
+  border:1.5px solid rgba(178,138,69,.42);
+  border-radius:50% 50% 26px 26px / 41% 41% 20px 20px;}
 
 /* ── filter ────────────────────────────────────────── */
 .filterbar{display:flex;justify-content:center;margin:10px 0 4px;}
 .seg2{display:inline-flex;gap:4px;background:var(--card);border:1px solid var(--line);border-radius:34px;padding:5px;box-shadow:var(--shadow-sm);max-width:100%;overflow:auto;}
 .seg2 button{font-family:var(--sans);white-space:nowrap;background:transparent;border:none;color:var(--muted);font-size:13.5px;font-weight:600;padding:9px 17px;border-radius:30px;cursor:pointer;transition:.2s;}
 .seg2 button.on{background:var(--ink);color:#F7F1E8;}
+/* studio / home-service mode toggle */
+.modetoggle{display:flex;justify-content:center;margin:6px 0 2px;}
+.modeseg{display:inline-flex;gap:4px;background:var(--card);border:1px solid var(--line);border-radius:34px;padding:5px;box-shadow:var(--shadow-sm);}
+.modeseg button{font-family:var(--sans);white-space:nowrap;background:transparent;border:none;color:var(--muted);font-size:14px;font-weight:700;padding:10px 22px;border-radius:30px;cursor:pointer;transition:.2s;}
+.modeseg button.on{background:linear-gradient(135deg,var(--sage),#5C6A48);color:#F7F1E8;box-shadow:0 12px 24px -14px rgba(92,106,72,.85);}
+.homehint{max-width:640px;margin:12px auto 2px;text-align:center;color:var(--ink-soft);font-size:14.5px;line-height:1.55;background:var(--sage-soft);border:1px solid var(--line);border-radius:16px;padding:12px 16px;}
+.price2.home{font-family:var(--sans);font-size:12.5px;font-weight:700;color:var(--sage);}
 
 /* ── lanes + style cards ───────────────────────────── */
 .lane2{margin-top:40px;}
@@ -578,6 +594,8 @@ body:has(.site){background:#F2EADF;display:block;padding:0;overflow-x:clip;}
 .ip-copy:hover{background:rgba(178,138,69,.06);}
 .ip-num{font-family:var(--serif);font-weight:700;font-size:22px;color:var(--ink);letter-spacing:1px;}
 .ip-lab{font-size:12px;font-weight:700;color:var(--gold);white-space:nowrap;}
+/* home-service tag on dashboard booking cards */
+.home-tag{display:inline-block;font-size:11px;font-weight:700;color:var(--sage);background:var(--sage-soft);border-radius:20px;padding:2px 9px;vertical-align:middle;}
 
 /* ── location card (confirm) + find-us (home) ──────── */
 .loc-card .eyebrow{color:var(--gold);}
@@ -600,6 +618,7 @@ body:has(.site){background:#F2EADF;display:block;padding:0;overflow-x:clip;}
 .book-metaline{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;margin-top:16px;font-size:14px;color:var(--muted);}
 .book-price{font-family:var(--serif);font-weight:600;font-size:24px;color:var(--ink);line-height:1;}
 .book-price .cur{font-family:var(--sans);font-size:12px;font-weight:600;color:var(--muted);letter-spacing:.5px;}
+.book-homeprice{font-family:var(--sans);font-weight:700;font-size:15px;color:var(--sage);}
 .book-dot{color:var(--faint);}
 [dir="rtl"] .book-name{font-style:normal;}
 @media(max-width:760px){
