@@ -686,13 +686,14 @@ function ServiceRow({ s, setServices, settings }) {
   const [dur, setDur] = useState(s.dur);
   const [colorSet, setColorSet] = useState(s.colorSet || "");
   const [desc, setDesc] = useState(s.description || "");
+  const [homeOk, setHomeOk] = useState(!!s.homeOk);
   const [busy, setBusy] = useState(false);
   const img = s.img;
 
   const save = async () => {
     const origGroup = groupKey(s);
     const description = desc.trim();
-    await store.saveService({ ...s, lane, group: group.trim(), name: name.trim(), price: +price, dur: +dur, colorSet, description });
+    await store.saveService({ ...s, lane, group: group.trim(), name: name.trim(), price: +price, dur: +dur, colorSet, description, homeOk });
     // a style's section, color set + description apply to all its size variants together
     const all = await store.getServices();
     for (const x of all) {
@@ -747,6 +748,10 @@ function ServiceRow({ s, setServices, settings }) {
             <div><label>{t("priceLab")}</label><input value={price} onChange={(e) => setPrice(e.target.value)} /></div>
             <div><label>{t("minLab")}</label><input value={dur} onChange={(e) => setDur(e.target.value)} /></div>
           </div>
+          <label className="switchrow" style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 12 }}>
+            <input type="checkbox" checked={homeOk} onChange={(e) => setHomeOk(e.target.checked)} />
+            <span>🏠 {t("homeOkLabel")}</span>
+          </label>
           <input ref={inputRef} type="file" accept="image/*" onChange={onPhoto} style={{ display: "none" }} />
           <div className="acts">
             <button className="pink sm" onClick={save}>{t("save")}</button>
@@ -771,6 +776,7 @@ function AddService({ services, setServices, settings, onDone }) {
   const [colorSet, setColorSet] = useState("");
   const [desc, setDesc] = useState("");
   const [img, setImg] = useState("");
+  const [homeOk, setHomeOk] = useState(false);
   const [busy, setBusy] = useState(false);
   const existing = [...new Set(services.map(groupKey))];
 
@@ -782,9 +788,9 @@ function AddService({ services, setServices, settings, onDone }) {
   };
   const add = async () => {
     if (!group.trim() || !name.trim() || !price) return toast(t("catNamePrice"));
-    await store.addService({ id: uid(), lane, group: group.trim(), name: name.trim(), price: +price, dur: +dur || 120, img, colorSet, description: desc.trim() });
+    await store.addService({ id: uid(), lane, group: group.trim(), name: name.trim(), price: +price, dur: +dur || 120, img, colorSet, description: desc.trim(), homeOk });
     setServices(await store.getServices());
-    setGroup(""); setName(""); setPrice(""); setDur(""); setImg(""); setColorSet(""); setDesc("");
+    setGroup(""); setName(""); setPrice(""); setDur(""); setImg(""); setColorSet(""); setDesc(""); setHomeOk(false);
     toast(t("saved")); onDone && onDone();
   };
 
@@ -811,6 +817,10 @@ function AddService({ services, setServices, settings, onDone }) {
         <option value="">{t("noColorsOpt")}</option>
         {(settings.colorSets || []).map((cs) => <option key={cs.id} value={cs.id}>{cs.name}</option>)}
       </select>
+      <label className="switchrow" style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10 }}>
+        <input type="checkbox" checked={homeOk} onChange={(e) => setHomeOk(e.target.checked)} />
+        <span>🏠 {t("homeOkLabel")}</span>
+      </label>
       <input ref={inputRef} type="file" accept="image/*" onChange={onPhoto} style={{ display: "none" }} />
       <div className="acts" style={{ marginTop: 10, alignItems: "center" }}>
         <button className="ghost sm" disabled={busy} onClick={() => inputRef.current?.click()}>{img ? t("changePhoto") : t("addPhoto")}</button>

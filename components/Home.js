@@ -30,7 +30,8 @@ export default function Home({ services, settings, onPick, mode = "studio", setM
   const home = mode === "home";
   const [filter, setFilter] = useState("all");
   const [reviews, setReviews] = useState([]);
-  const grps = groupStyles(services);
+  // in home-service mode only show styles the owner marked available for home
+  const grps = groupStyles(home ? services.filter((s) => s.homeOk) : services);
 
   // owner-defined ordering (with safe fallbacks)
   const laneOrder = [...(settings?.laneOrder || LANES), ...LANES.filter((l) => !(settings?.laneOrder || LANES).includes(l))];
@@ -99,6 +100,10 @@ export default function Home({ services, settings, onPick, mode = "studio", setM
           <span className="big">✨</span>
           {t("setupMenu")}
         </div>
+      )}
+
+      {home && services.length > 0 && grps.length === 0 && (
+        <div className="scard-empty"><span className="big">🏠</span>{t("noHomeServices")}</div>
       )}
 
       <div id="styles">
