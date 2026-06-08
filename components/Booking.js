@@ -5,7 +5,7 @@ import { store } from "@/lib/store";
 import { availableStarts, dstr, hrs, t2m, todayStr, uid, toast, isDayFullyBlocked, findPromo, applyPromo, waLink } from "@/lib/util";
 import { track } from "@/lib/analytics";
 import { cldImg, IMG } from "@/lib/img";
-import { useLang, tVariant, tName, dayShort, fmtDateL } from "@/lib/i18n";
+import { useLang, tVariant, tName, dayShort, fmtDateL, fmtTime } from "@/lib/i18n";
 import Lightbox from "./Lightbox";
 
 export default function Booking({ sel, setSel, settings, onBack, onBooked }) {
@@ -253,7 +253,7 @@ export default function Booking({ sel, setSel, settings, onBack, onBooked }) {
                             tabIndex={0}
                             onClick={() => { if (!start) track("begin_booking", { name: service.name, value: service.price }); setStart(tm); }}
                           >
-                            {tm}
+                            {fmtTime(tm, lang)}
                           </div>
                         ))}
                       </div>

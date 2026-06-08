@@ -5,7 +5,7 @@ import { LANES } from "@/lib/config";
 import { store } from "@/lib/store";
 import { todayStr, dstr, uid, waLink, toast, groupKey, groupStyles, normPhone } from "@/lib/util";
 import { uploadImage, cldImg, IMG } from "@/lib/img";
-import { useLang, fmtDateL, tName, dayShort, laneLabel } from "@/lib/i18n";
+import { useLang, fmtDateL, tName, dayShort, laneLabel, fmtTime } from "@/lib/i18n";
 
 function AdLang() {
   const { lang, setLang } = useLang();
@@ -122,8 +122,8 @@ function BookingCard({ b, settings, services = [], setStatus, onChanged }) {
   const dep = Math.round((b.price * settings.depositPct) / 100);
   const dateStr = fmtDateL(b.date, lang);
   const svcName = tName(b.serviceName, lang) + (b.color ? " · " + b.color : "");
-  const conf = t("waConfirm", { name: b.clientName, service: svcName, date: dateStr, time: b.start, dep: dep.toLocaleString(), ip: settings.instapay });
-  const rem = t("waRemind", { name: b.clientName, service: svcName, date: dateStr, time: b.start });
+  const conf = t("waConfirm", { name: b.clientName, service: svcName, date: dateStr, time: fmtTime(b.start, lang), dep: dep.toLocaleString(), ip: settings.instapay });
+  const rem = t("waRemind", { name: b.clientName, service: svcName, date: dateStr, time: fmtTime(b.start, lang) });
   const editable = b.status !== "done" && b.status !== "cancelled";
   const [editing, setEditing] = useState(false);
   const [svId, setSvId] = useState(b.serviceId);
@@ -143,7 +143,7 @@ function BookingCard({ b, settings, services = [], setStatus, onChanged }) {
     <div className={"bk bk-" + b.status}>
       <div className="top">
         <div>
-          <div className="when">{dateStr} · {b.start}</div>
+          <div className="when">{dateStr} · {fmtTime(b.start, lang)}</div>
           <div className="svcn">{svcName} {b.homeService && <span className="home-tag">🏠 {t("homeBadge")}</span>}</div>
           <div className="meta">{b.clientName} · {b.clientPhone} · {b.price.toLocaleString()} {t("egp")}</div>
           {b.homeService && b.address && <div className="meta">📍 {b.address}</div>}
@@ -167,7 +167,7 @@ function BookingCard({ b, settings, services = [], setStatus, onChanged }) {
           </select>
           <div className="row2" style={{ marginTop: 10 }}>
             <div><label>{t("date")}</label><input type="date" value={date} min={todayStr()} onChange={(e) => setDate(e.target.value)} /></div>
-            <div><label>{t("time")}</label><input value={time} onChange={(e) => setTime(e.target.value)} placeholder="14:00" /></div>
+            <div><label>{t("time")}</label><input type="time" value={time} onChange={(e) => setTime(e.target.value)} /></div>
           </div>
           <div className="acts" style={{ marginTop: 10 }}>
             <button className="pink sm" onClick={saveEdit}>{t("save")}</button>
@@ -235,7 +235,7 @@ function Schedule({ bookings, settings, services, openAdd, setOpenAdd, setStatus
                   <span className="cal-evs">
                     {list.slice(0, 3).map((b) => (
                       <span key={b.id} className={"cal-ev b-" + b.status} title={b.clientName}>
-                        <b>{b.start}</b> {(b.clientName || "").split(" ")[0]}
+                        <b>{fmtTime(b.start, lang)}</b> {(b.clientName || "").split(" ")[0]}
                       </span>
                     ))}
                     {list.length > 3 && <span className="cal-more">+{list.length - 3}</span>}
@@ -307,7 +307,7 @@ function AddForm({ services, onAdded }) {
       )}
       <div className="row2" style={{ marginTop: 10 }}>
         <div><label>{t("date")}</label><input type="date" value={date} min={todayStr()} onChange={(e) => setDate(e.target.value)} /></div>
-        <div><label>{t("time")}</label><input value={time} onChange={(e) => setTime(e.target.value)} placeholder="14:00" /></div>
+        <div><label>{t("time")}</label><input type="time" value={time} onChange={(e) => setTime(e.target.value)} /></div>
       </div>
       <label style={{ marginTop: 10, display: "block" }}>{t("clientName")}</label>
       <input value={name} onChange={(e) => setName(e.target.value)} placeholder={t("clientName")} />
@@ -478,8 +478,8 @@ function AvailabilityPanel({ settings, setSettings }) {
           ))}
         </div>
         <div className="row2" style={{ marginTop: 12 }}>
-          <div><label>{t("open")}</label><input value={open} onChange={(e) => setOpen(e.target.value)} /></div>
-          <div><label>{t("close")}</label><input value={close} onChange={(e) => setClose(e.target.value)} /></div>
+          <div><label>{t("open")}</label><input type="time" value={open} onChange={(e) => setOpen(e.target.value)} /></div>
+          <div><label>{t("close")}</label><input type="time" value={close} onChange={(e) => setClose(e.target.value)} /></div>
         </div>
         <label style={{ marginTop: 10, display: "block" }}>{t("slotStep")}</label>
         <input value={step} onChange={(e) => setStep(e.target.value)} />
@@ -521,8 +521,8 @@ function TimeOff({ settings, setSettings }) {
       </div>
       {!allDay && (
         <div className="row2" style={{ marginTop: 10 }}>
-          <div><label>{t("fromT")}</label><input value={from} onChange={(e) => setFrom(e.target.value)} placeholder="13:00" /></div>
-          <div><label>{t("toT")}</label><input value={to} onChange={(e) => setTo(e.target.value)} placeholder="14:00" /></div>
+          <div><label>{t("fromT")}</label><input type="time" value={from} onChange={(e) => setFrom(e.target.value)} /></div>
+          <div><label>{t("toT")}</label><input type="time" value={to} onChange={(e) => setTo(e.target.value)} /></div>
         </div>
       )}
       <label style={{ marginTop: 10, display: "block" }}>{t("blockNote")}</label>
@@ -537,7 +537,7 @@ function TimeOff({ settings, setSettings }) {
               <div className="top">
                 <div>
                   <div className="when">{fmtDateL(b.date, lang)}</div>
-                  <div className="meta">{b.allDay ? t("allDay") : b.start + " – " + b.end}{b.note ? " · " + b.note : ""}</div>
+                  <div className="meta">{b.allDay ? t("allDay") : fmtTime(b.start, lang) + " – " + fmtTime(b.end, lang)}{b.note ? " · " + b.note : ""}</div>
                 </div>
                 <button className="danger sm" onClick={() => remove(b.id)}>{t("remove")}</button>
               </div>

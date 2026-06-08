@@ -3,7 +3,7 @@ import { useState } from "react";
 import { waLink } from "@/lib/util";
 import { track } from "@/lib/analytics";
 import { cldImg, IMG } from "@/lib/img";
-import { useLang, fmtDateL, tName } from "@/lib/i18n";
+import { useLang, fmtDateL, tName, fmtTime } from "@/lib/i18n";
 import Lightbox from "./Lightbox";
 
 export default function Confirm({ booking, settings, onHome }) {
@@ -18,7 +18,7 @@ export default function Confirm({ booking, settings, onHome }) {
   const dateStr = fmtDateL(b.date, lang);
   const svcName = tName(b.serviceName, lang) + (b.color ? " · " + b.color : "");
   const msg = t("waClient", {
-    service: svcName, date: dateStr, time: b.start, name: b.clientName, dep: dep.toLocaleString(),
+    service: svcName, date: dateStr, time: fmtTime(b.start, lang), name: b.clientName, dep: dep.toLocaleString(),
   });
   const locName = (lang === "ar" ? settings.address : settings.addressEn) || settings.address || settings.addressEn;
   const waMsg = settings.mapsUrl ? msg + "\n" + t("waLocationLine", { url: settings.mapsUrl }) : msg;
@@ -39,7 +39,7 @@ export default function Confirm({ booking, settings, onHome }) {
       <div className="card glass">
         <div className="summary" style={{ border: "none", background: "none", padding: 0 }}>
           <div>
-            <div className="when">{dateStr} · {b.start}</div>
+            <div className="when">{dateStr} · {fmtTime(b.start, lang)}</div>
             <div className="svcn">{svcName} · {b.clientName}</div>
           </div>
           <div className="amt">{b.price.toLocaleString()}</div>
