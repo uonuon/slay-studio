@@ -20,15 +20,25 @@ export default function Hero({ onBook }) {
         </div>
         <div className="trust2">
           <span className="chip2"><span className="t2-stars">★★★★★</span> <b>4.9</b></span>
-          <span className="chip2">🌿 {t("chipHealthy")}</span>
+          <span className="chip2">{t("chipHealthy")}</span>
           <span className="chip2">{t("chipDeposit")}</span>
-          <span className="chip2">عربي / EN</span>
         </div>
       </div>
 
       <div className="arch-wrap">
         <div className="arch">
           <div className="arch-photo" style={{ backgroundImage: "url(/hero-braids.jpg)" }} />
+        </div>
+        <div className="arch-badge" aria-hidden="true">
+          <svg viewBox="0 0 100 100">
+            <defs>
+              <path id="abc" d="M50,50 m-38,0 a38,38 0 1,1 76,0 a38,38 0 1,1 -76,0" />
+            </defs>
+            <text fill="#4C3F35" fontSize="8.8" letterSpacing="1.4">
+              <textPath href="#abc">SLAY STUDIO ✦ NEW CAIRO ✦ BRAIDS ✦</textPath>
+            </text>
+          </svg>
+          <span className="arch-badge-c">✦</span>
         </div>
       </div>
     </div>

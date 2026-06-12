@@ -12,8 +12,15 @@ import Confirm from "./Confirm";
 
 function SiteNav({ onBook }) {
   const { lang, setLang, t } = useLang();
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 10);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
   return (
-    <nav className="snav">
+    <nav className={"snav" + (scrolled ? " scrolled" : "")}>
       <div className="snav-in">
         <div className="snav-brand">Slay Studio<span className="dot">.</span></div>
         <div className="snav-sp" />
@@ -28,7 +35,7 @@ function SiteNav({ onBook }) {
 }
 
 export default function App() {
-  const { lang, t } = useLang();
+  const { lang } = useLang();
   const [ready, setReady] = useState(false);
   const [view, setView] = useState("home");
   const [services, setServices] = useState([]);
@@ -67,17 +74,10 @@ export default function App() {
     else if (typeof window !== "undefined") window.scrollTo({ top: 0 });
   };
 
-  if (!ready || !settings) {
-    return (
-      <div className="site">
-        <SiteNav onBook={scrollToStyles} />
-        <div className="shell">
-          <Hero onBook={scrollToStyles} />
-          <div className="scard-empty" style={{ marginTop: 24 }}>{t("loading")}</div>
-        </div>
-      </div>
-    );
-  }
+  // One stable tree for loading AND loaded: Hero stays mounted in the same
+  // position, so its entrance choreography plays exactly once. Only the
+  // content below it swaps (skeleton → real styles).
+  const loading = !ready || !settings;
 
   return (
     <div className="site">
@@ -89,9 +89,15 @@ export default function App() {
         {view === "home" && (
           <>
             <Hero onBook={scrollToStyles} />
-            <div className="viewfade" key="home">
-              <Home services={services} settings={settings} onPick={goBook} mode={mode} setMode={setMode} />
-            </div>
+            {loading ? (
+              <div className="skelgrid" key="skel" aria-hidden="true">
+                {Array.from({ length: 6 }).map((_, i) => <div key={i} className="scard-skel" style={{ "--i": i }} />)}
+              </div>
+            ) : (
+              <div className="viewfade" key="home">
+                <Home services={services} settings={settings} onPick={goBook} mode={mode} setMode={setMode} />
+              </div>
+            )}
             <div className="sfoot">Slay Studio · <b>@braids.bymarmora</b> · Fifth Settlement, New Cairo</div>
           </>
         )}

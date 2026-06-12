@@ -173,10 +173,11 @@ export default function Booking({ sel, setSel, settings, onBack, onBooked }) {
           <div className="card glass">
             <label>{t("preferredDate")}</label>
             <div className="datestrip">
-              {dates.map((d) => (
+              {dates.map((d, di) => (
                 <div
                   key={d.str}
                   className={"dchip" + (d.work ? "" : " off") + (d.str === date ? " on" : "")}
+                  style={{ "--i": di }}
                   tabIndex={d.work ? 0 : -1}
                   onClick={() => d.work && setDate(d.str)}
                 >
@@ -218,10 +219,11 @@ export default function Booking({ sel, setSel, settings, onBack, onBooked }) {
           <div className="card glass">
             <label>{t("pickDate")}</label>
             <div className="datestrip">
-              {dates.map((d) => (
+              {dates.map((d, di) => (
                 <div
                   key={d.str}
                   className={"dchip" + (d.work ? "" : " off") + (d.str === date ? " on" : "")}
+                  style={{ "--i": di }}
                   tabIndex={d.work ? 0 : -1}
                   onClick={() => d.work && setDate(d.str)}
                 >
@@ -246,10 +248,11 @@ export default function Booking({ sel, setSel, settings, onBack, onBooked }) {
                     <div key={lab}>
                       <div className="sgroup">{lab}</div>
                       <div className="slotgrid">
-                        {g.map((tm) => (
+                        {g.map((tm, ti) => (
                           <div
                             key={tm}
                             className={"slot" + (start === tm ? " sel" : "")}
+                            style={{ "--i": ti }}
                             tabIndex={0}
                             onClick={() => { if (!start) track("begin_booking", { name: service.name, value: service.price }); setStart(tm); }}
                           >

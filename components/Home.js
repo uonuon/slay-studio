@@ -49,6 +49,29 @@ export default function Home({ services, settings, onPick, mode = "studio", setM
     (async () => { try { setReviews(await store.listReviews()); } catch (e) {} })();
   }, []);
 
+  // scroll-reveal: sections render with .rv (hidden); add .in as they enter the viewport
+  useEffect(() => {
+    const els = Array.from(document.querySelectorAll(".site .rv:not(.in)"));
+    if (!els.length) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      els.forEach((el) => el.classList.add("in"));
+      return;
+    }
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); }
+        });
+      },
+      { rootMargin: "0px 0px -10% 0px", threshold: 0.05 }
+    );
+    els.forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, [filter, mode, services, reviews, settings]);
+
+  // editorial ticker — the studio's own style names, looped
+  const marqNames = !home && grps.length >= 3 ? grps.map((g) => tName(g.group, lang)) : [];
+
   const sortedReviews = [...reviews].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
 
   // enter the home-service flow and jump up to the styles to pick one
@@ -84,6 +107,16 @@ export default function Home({ services, settings, onPick, mode = "studio", setM
         </div>
       )}
 
+      {marqNames.length > 0 && (
+        <div className="marq" dir="ltr" aria-hidden="true">
+          <div className="marq-in">
+            {[...marqNames, ...marqNames].map((n, i) => (
+              <span key={i}>{n}<i> ✦</i></span>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* filter */}
       <div className="filterbar">
         <div className="seg2">
@@ -107,18 +140,19 @@ export default function Home({ services, settings, onPick, mode = "studio", setM
       )}
 
       <div id="styles">
-        {laneOrder.map((L) => {
-          if (filter !== "all" && filter !== L) return null;
+        {laneOrder
+          .filter((L) => (filter === "all" || filter === L) && orderedGroups(L).length)
+          .map((L, li) => {
           const list = orderedGroups(L);
-          if (!list.length) return null;
           return (
-            <section key={L} className="lane2">
+            <section key={L} className="lane2 rv">
               <div className="lane2-head">
+                <span className="lane2-num">{String(li + 1).padStart(2, "0")}</span>
                 <h2 className="lane2-title">{laneLabel(L, lang, "full")}</h2>
                 <span className="lane2-line" />
               </div>
               <div className="grid2">
-                {list.map((g) => {
+                {list.map((g, gi) => {
                   const prices = g.opts.map((o) => o.price);
                   const durs = g.opts.map((o) => o.dur);
                   const img = g.opts.find((o) => o.img)?.img;
@@ -130,7 +164,7 @@ export default function Home({ services, settings, onPick, mode = "studio", setM
                         ? t("aboutHrs", { n: hrs(durs[0]) })
                         : t("aboutHrsRange", { a: hrs(Math.min(...durs)), b: hrs(Math.max(...durs)) });
                   return (
-                    <article key={g.group} className="scard" onClick={() => onPick(g)}>
+                    <article key={g.group} className="scard" style={{ "--i": gi % 9 }} onClick={() => onPick(g)}>
                       <div className="scard-img" style={img ? { backgroundImage: `url(${cldImg(img, IMG.thumb)})` } : { background: LANE_GRAD[L] || LANE_GRAD["Slay Studio"] }}>
                         {!img && (
                           <>
@@ -166,14 +200,14 @@ export default function Home({ services, settings, onPick, mode = "studio", setM
 
       {/* colour teaser — only when the owner has set colour sets */}
       {swatches.length > 0 && (
-        <section className="colourband">
+        <section className="colourband rv">
           <div className="colourband-copy">
             <h3>{t("colourTitle")}</h3>
             <p>{t("colourSub")}</p>
           </div>
           <div className="swatches2">
-            {swatches.map((c) => (
-              <div className="sw2" key={c.id || c.name}>
+            {swatches.map((c, i) => (
+              <div className="sw2" key={c.id || c.name} style={{ "--i": i }}>
                 <i style={c.img ? { backgroundImage: `url(${cldImg(c.img, IMG.swatch)})` } : { background: c.hex || "#888" }} />
                 <span>{c.name}</span>
               </div>
@@ -183,16 +217,16 @@ export default function Home({ services, settings, onPick, mode = "studio", setM
       )}
 
       {sortedReviews.length > 0 && (
-        <div className="testi">
+        <div className="testi rv">
           <div className="lane2-head">
             <h2 className="lane2-title">{t("reviewsHeading")}</h2>
             <span className="lane2-line" />
           </div>
           <div className="revstrip">
-            {sortedReviews.map((r) => {
+            {sortedReviews.map((r, ri) => {
               const rate = Math.max(1, Math.min(5, r.rating || 5));
               return (
-                <div key={r.id} className="revcard">
+                <div key={r.id} className="revcard" style={{ "--i": ri % 6 }}>
                   <div className="rev-stars">
                     <span className="on">{"★".repeat(rate)}</span><span className="dim">{"★".repeat(5 - rate)}</span>
                   </div>
@@ -208,7 +242,7 @@ export default function Home({ services, settings, onPick, mode = "studio", setM
       )}
 
       {setMode && !home && (
-        <section className="homecta">
+        <section className="homecta rv">
           <div className="homecta-copy">
             <h3>{t("homeCtaTitle")}</h3>
             <p>{t("homeCtaSub")}</p>
@@ -218,7 +252,7 @@ export default function Home({ services, settings, onPick, mode = "studio", setM
       )}
 
       {(settings?.address || settings?.addressEn || settings?.mapsUrl) && (
-        <section className="findus">
+        <section className="findus rv">
           <div className="lane2-head">
             <h2 className="lane2-title">{t("findUs")}</h2>
             <span className="lane2-line" />
