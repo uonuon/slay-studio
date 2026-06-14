@@ -51,7 +51,21 @@ export default function Confirm({ booking, settings, onHome }) {
         <div className="eyebrow">{t("depositTitle")}</div>
         <div className="depbig">{dep.toLocaleString()} <span>{t("egp")}</span></div>
         <p>{t("depositPara", { dep: dep.toLocaleString(), ip: settings.instapay })}</p>
-        <div className="ip-label">{t("instapayNumberLabel")}</div>
+
+        {settings.instapayUrl && (
+          <a className="btn ip-pay full" href={settings.instapayUrl} target="_blank" rel="noopener noreferrer">
+            {t("payInstapay")} ↗
+          </a>
+        )}
+
+        {settings.instapayQr && (
+          <div className="ip-qr">
+            <div className="ip-qr-label">{t("scanToPay")}</div>
+            <img src={settings.instapayQr} alt="InstaPay QR · slaystudio@instapay" loading="lazy" />
+          </div>
+        )}
+
+        <div className="ip-label">{t("orInstapayNumber")}</div>
         <button type="button" className="ip-copy" onClick={copyIp}>
           <span className="ip-num">{settings.instapay}</span>
           <span className="ip-lab">{copied ? t("copied") : "⧉ " + t("copyTap")}</span>

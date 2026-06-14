@@ -195,7 +195,7 @@ export default function Booking({ sel, setSel, settings, onBack, onBooked }) {
             <label style={{ marginTop: 12, display: "block" }}>{t("waNumber")}</label>
             <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="01X XXXX XXXX" inputMode="tel" />
             <button className="btn wa full glass" style={{ marginTop: 15 }} onClick={submitHome}>{t("chatOnWa")}</button>
-            <small className="note">{t("priceAfterChat")}</small>
+            {!homePrice ? <small className="note">{t("priceAfterChat")}</small> : null}
           </div>
         </>
       ) : (

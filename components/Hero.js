@@ -34,8 +34,8 @@ export default function Hero({ onBook }) {
             <defs>
               <path id="abc" d="M50,50 m-38,0 a38,38 0 1,1 76,0 a38,38 0 1,1 -76,0" />
             </defs>
-            <text fill="#4C3F35" fontSize="8.8" letterSpacing="1.4">
-              <textPath href="#abc">SLAY STUDIO ✦ NEW CAIRO ✦ BRAIDS ✦</textPath>
+            <text fill="#4C3F35" fontSize="7.6" letterSpacing="1.3">
+              <textPath href="#abc">SLAY STUDIO ✦ NEW CAIRO ✦ BRAIDS ✦ </textPath>
             </text>
           </svg>
           <span className="arch-badge-c">✦</span>

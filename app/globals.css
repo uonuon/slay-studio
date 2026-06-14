@@ -598,6 +598,15 @@ body:has(.site){background:#F2EADF;display:block;padding:0;overflow-x:clip;}
 .ip-copy:hover{background:rgba(178,138,69,.06);}
 .ip-num{font-family:var(--serif);font-weight:700;font-size:22px;color:var(--ink);letter-spacing:1px;}
 .ip-lab{font-size:12px;font-weight:700;color:var(--gold);white-space:nowrap;}
+/* InstaPay tap-to-pay button (brand purple) + scannable QR */
+.ip-pay{margin-top:16px;background:linear-gradient(135deg,#7A2BBE,#5A1E8F);color:#fff;
+  letter-spacing:.3px;box-shadow:0 16px 32px -16px rgba(122,43,190,.7);}
+.ip-pay:hover{filter:brightness(1.07);}
+.ip-qr{margin-top:18px;display:flex;flex-direction:column;align-items:center;text-align:center;}
+.ip-qr-label{font-size:12px;font-weight:700;color:var(--gold);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:11px;}
+[dir="rtl"] .ip-qr-label{letter-spacing:0;text-transform:none;font-size:13.5px;}
+.ip-qr img{width:208px;max-width:74%;height:auto;display:block;background:#fff;border-radius:16px;padding:10px;
+  border:1px solid var(--line-2);box-shadow:var(--shadow-sm);}
 /* home-service tag on dashboard booking cards */
 .home-tag{display:inline-block;font-size:11px;font-weight:700;color:var(--sage);background:var(--sage-soft);border-radius:20px;padding:2px 9px;vertical-align:middle;}
 
@@ -969,7 +978,13 @@ html:has(.site){scroll-behavior:smooth;}
 @media(max-width:880px){
   .hero2{padding:34px 0 18px;gap:30px;}
   .skelgrid{grid-template-columns:repeat(2,1fr);}
-  .arch-badge{width:84px;height:84px;inset-inline-start:-6px;bottom:14px;}
+  /* tuck the seal fully INSIDE the arch's bottom-left so it can't hang off the
+     edge or clip on the rounded corner (it has whitespace to lean into only on
+     the 2-column desktop layout) */
+  .arch-badge{width:78px;height:78px;inset-inline-start:14px;inset-inline-end:auto;bottom:14px;}
+}
+@media(max-width:420px){
+  .arch-badge{width:72px;height:72px;inset-inline-start:12px;bottom:12px;}
 }
 @media(max-width:560px){
   .h1{font-size:clamp(34px,9vw,46px);}
