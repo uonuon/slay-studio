@@ -239,7 +239,7 @@ export default function Booking({ sel, setSel, settings, onBack, onBooked }) {
                   <div className="skel" /><div className="skel" /><div className="skel" />
                 </div>
               ) : starts.length === 0 ? (
-                <div className="empty"><span className="big">🗓️</span>{t("noTimes")}</div>
+                <div className="empty"><span className="big">📅</span>{t("noTimes")}</div>
               ) : (
                 groups.map(([lab, test]) => {
                   const g = starts.filter(test);

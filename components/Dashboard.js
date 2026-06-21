@@ -3,9 +3,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { USE_FB } from "@/lib/firebase";
 import { LANES } from "@/lib/config";
 import { store } from "@/lib/store";
-import { todayStr, dstr, uid, waLink, toast, groupKey, groupStyles, normPhone } from "@/lib/util";
+import { todayStr, dstr, uid, waLink, toast, groupKey, groupStyles, normPhone, copyToClipboard } from "@/lib/util";
 import { uploadImage, cldImg, IMG } from "@/lib/img";
 import { useLang, fmtDateL, tName, dayShort, laneLabel, fmtTime } from "@/lib/i18n";
+import { messageTemplates, bookingTemplates, fillTemplate } from "@/lib/messageTemplates";
 
 function AdLang() {
   const { lang, setLang } = useLang();
@@ -50,18 +51,19 @@ export default function Dashboard({ services, settings, setServices, setSettings
   const exit = async () => { await store.logout(); onExit(); };
 
   const PRIMARY = [
-    ["sched", "🗓️", t("tabSchedule")],
+    ["sched", "📅", t("tabSchedule")],
     ["clients", "👥", t("tabClients")],
+    ["messages", "💬", t("tabMessages")],
     ["money", "📊", t("tabMoney")],
     ["materials", "📦", t("materials")],
   ];
   const MANAGE = [
-    ["services", "✂️", t("servicesPrices")],
+    ["services", "💈", t("servicesPrices")],
     ["colors", "🎨", t("colors")],
-    ["arrange", "↕️", t("arrange")],
+    ["arrange", "🔃", t("arrange")],
     ["availability", "🕑", t("availability")],
     ["reviews", "⭐", t("reviews")],
-    ["settings", "⚙️", t("studioSettings")],
+    ["settings", "🔧", t("studioSettings")],
   ];
   const ALL = [...PRIMARY, ...MANAGE];
   const title = (ALL.find((x) => x[0] === tab) || [])[2];
@@ -94,6 +96,7 @@ export default function Dashboard({ services, settings, setServices, setSettings
             <Schedule bookings={bookings} settings={settings} services={services} openAdd={openAdd} setOpenAdd={setOpenAdd} setStatus={setStatus} onAdded={refresh} />
           )}
           {tab === "clients" && <Clients bookings={bookings} settings={settings} />}
+          {tab === "messages" && <MessagesPanel settings={settings} setSettings={setSettings} />}
           {tab === "money" && <Money bookings={bookings} settings={settings} />}
           {tab === "materials" && <MaterialsPanel />}
           {tab === "services" && <ServicesPanel services={services} setServices={setServices} settings={settings} />}
@@ -126,9 +129,14 @@ function BookingCard({ b, settings, services = [], setStatus, onChanged }) {
   const rem = t("waRemind", { name: b.clientName, service: svcName, date: dateStr, time: fmtTime(b.start, lang) });
   const editable = b.status !== "done" && b.status !== "cancelled";
   const [editing, setEditing] = useState(false);
+  const [msgOpen, setMsgOpen] = useState(false);
   const [svId, setSvId] = useState(b.serviceId);
   const [date, setDate] = useState(b.date);
   const [time, setTime] = useState(b.start);
+
+  // ready-to-send templates, personalised for this client (name/date/style filled)
+  const msgItems = useMemo(() => bookingTemplates(settings), [settings]);
+  const msgVars = { name: b.clientName, day: dateStr, time: fmtTime(b.start, lang), style: svcName };
 
   const saveEdit = async () => {
     if (!/^\d{1,2}:\d{2}$/.test(time.trim())) return toast(t("timeFmt"));
@@ -156,8 +164,24 @@ function BookingCard({ b, settings, services = [], setStatus, onChanged }) {
         {editable && <button className={"ghost sm" + (editing ? " on" : "")} onClick={() => setEditing((v) => !v)}>{t("edit")}</button>}
         <a className="btn wa sm" href={waLink(b.clientPhone, conf)} target="_blank" rel="noopener noreferrer">{t("confirmW")}</a>
         <a className="btn ghost sm" href={waLink(b.clientPhone, rem)} target="_blank" rel="noopener noreferrer">{t("remind")}</a>
+        <button className={"ghost sm" + (msgOpen ? " on" : "")} onClick={() => setMsgOpen((v) => !v)}>💬 {t("tabMessages")}</button>
         <button className="danger sm" onClick={() => { if (confirm(t("cancelQ"))) setStatus(b.id, "cancelled"); }}>{t("cancel")}</button>
       </div>
+
+      {msgOpen && (
+        <div className="card glass" style={{ marginTop: 11 }}>
+          <div className="svcn" style={{ color: "var(--ink)", fontSize: 15 }}>{t("sendMessage")}</div>
+          <small className="note" style={{ marginTop: 2 }}>{t("sendMsgHint")}</small>
+          <div className="acts" style={{ marginTop: 10 }}>
+            {msgItems.map((m) => (
+              <a key={m.id} className="btn wa sm" target="_blank" rel="noopener noreferrer"
+                href={waLink(b.clientPhone, fillTemplate(lang === "ar" ? m.ar : m.en, msgVars))}>
+                {m.icon} {m.title[lang] || m.title.en}
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
 
       {editing && (
         <div className="card glass" style={{ marginTop: 11 }}>
@@ -254,7 +278,7 @@ function Schedule({ bookings, settings, services, openAdd, setOpenAdd, setStatus
 
       <h2 className="sect">{fmtDateL(selected, lang)}</h2>
       {dayList.length === 0
-        ? <div className="card"><div className="empty"><span className="big">🗓️</span>{t("noDay")}</div></div>
+        ? <div className="card"><div className="empty"><span className="big">📅</span>{t("noDay")}</div></div>
         : <div className="cards">{dayList.map((b) => <BookingCard key={b.id} b={b} settings={settings} services={services} setStatus={setStatus} onChanged={onAdded} />)}</div>}
     </>
   );
@@ -461,9 +485,11 @@ function AvailabilityPanel({ settings, setSettings }) {
   const [open, setOpen] = useState(settings.openTime);
   const [close, setClose] = useState(settings.closeTime);
   const [step, setStep] = useState(settings.slotStep);
+  const [lead, setLead] = useState(settings.leadTimeMins ?? 90);
+  const NOTICE = [[0, "noticeNone"], [30, "notice30"], [60, "notice60"], [90, "notice90"], [120, "notice120"], [180, "notice180"]];
 
   const saveAvail = async () => {
-    const ns = { ...settings, workDays: [...days].sort(), openTime: open, closeTime: close, slotStep: +step };
+    const ns = { ...settings, workDays: [...days].sort(), openTime: open, closeTime: close, slotStep: +step, leadTimeMins: +lead };
     await store.saveSettings(ns); setSettings(ns); toast(t("saved"));
   };
 
@@ -483,6 +509,11 @@ function AvailabilityPanel({ settings, setSettings }) {
         </div>
         <label style={{ marginTop: 10, display: "block" }}>{t("slotStep")}</label>
         <input value={step} onChange={(e) => setStep(e.target.value)} />
+        <label style={{ marginTop: 10, display: "block" }}>{t("minNotice")}</label>
+        <select value={lead} onChange={(e) => setLead(+e.target.value)}>
+          {NOTICE.map(([v, k]) => <option key={v} value={v}>{t(k)}</option>)}
+        </select>
+        <small className="note">{t("minNoticeHint")}</small>
         <button className="pink full" style={{ marginTop: 12 }} onClick={saveAvail}>{t("saveAvailability")}</button>
       </div>
       <TimeOff settings={settings} setSettings={setSettings} />
@@ -939,6 +970,86 @@ function ClientCard({ c, note, onSave, lang, t }) {
   );
 }
 
+// ── Messages (ready-to-send bilingual templates, editable) ───────────────
+function MessagesPanel({ settings, setSettings }) {
+  const { lang, t } = useLang();
+  const groups = useMemo(() => messageTemplates(settings), [settings]);
+  return (
+    <div className="panelcol">
+      <small className="note" style={{ margin: "0 2px 4px" }}>{t("msgHint")}</small>
+      {groups.map((g) => (
+        <div key={g.id} className="msg-group">
+          <h2 className="sect">{g.icon} {g.title[lang] || g.title.en}</h2>
+          {g.items.map((m) => <MsgCard key={m.id} m={m} settings={settings} setSettings={setSettings} />)}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function MsgCard({ m, settings, setSettings }) {
+  const { lang, t } = useLang();
+  const [pl, setPl] = useState(lang); // preview / copy language
+  const [editing, setEditing] = useState(false);
+  const [draftAr, setDraftAr] = useState(m.ar);
+  const [draftEn, setDraftEn] = useState(m.en);
+  const text = pl === "ar" ? m.ar : m.en;
+
+  const copy = async () => {
+    const ok = await copyToClipboard(text);
+    toast(ok ? t("copyDone") : "⚠︎");
+  };
+  const openEdit = () => { setDraftAr(m.ar); setDraftEn(m.en); setEditing(true); };
+  const saveEdit = async () => {
+    const ns = { ...settings, msgTemplates: { ...(settings.msgTemplates || {}), [m.id]: { ar: draftAr, en: draftEn } } };
+    await store.saveSettings(ns); setSettings(ns); setEditing(false); toast(t("saved"));
+  };
+  const resetEdit = async () => {
+    const map = { ...(settings.msgTemplates || {}) };
+    delete map[m.id];
+    const ns = { ...settings, msgTemplates: map };
+    await store.saveSettings(ns); setSettings(ns); setEditing(false); toast(t("saved"));
+  };
+
+  return (
+    <div className="msg-card">
+      <div className="msg-head">
+        <span className="msg-ic">{m.icon}</span>
+        <span className="msg-title">{m.title[lang] || m.title.en}</span>
+        {m.edited && <span className="badge b-confirmed msg-badge">{t("edited")}</span>}
+        {!editing && (
+          <div className="langtoggle msg-lang">
+            <button className={pl === "ar" ? "on" : ""} onClick={() => setPl("ar")}>ع</button>
+            <button className={pl === "en" ? "on" : ""} onClick={() => setPl("en")}>EN</button>
+          </div>
+        )}
+      </div>
+
+      {editing ? (
+        <>
+          <label style={{ display: "block" }}>{t("editMsgAr")}</label>
+          <textarea className="ta msg-edit" dir="rtl" rows={7} value={draftAr} onChange={(e) => setDraftAr(e.target.value)} />
+          <label style={{ marginTop: 10, display: "block" }}>{t("editMsgEn")}</label>
+          <textarea className="ta msg-edit" dir="ltr" rows={7} value={draftEn} onChange={(e) => setDraftEn(e.target.value)} />
+          <div className="acts">
+            <button className="pink sm" onClick={saveEdit}>{t("save")}</button>
+            <button className="ghost sm" onClick={() => setEditing(false)}>{t("cancel")}</button>
+            {m.edited && <button className="danger sm" onClick={resetEdit}>{t("resetDefault")}</button>}
+          </div>
+        </>
+      ) : (
+        <>
+          <pre className="msg-body" dir={pl === "ar" ? "rtl" : "ltr"}>{text}</pre>
+          <div className="acts msg-acts">
+            <button className="pink sm" onClick={copy}>📋 {t("copy")} · {pl === "ar" ? "العربية" : "English"}</button>
+            <button className="ghost sm" onClick={openEdit}>📝 {t("edit")}</button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 // ── Reviews (owner-posted testimonials) ──────────────────────────────────
 function Stars({ value, onChange, size = 22 }) {
   return (
@@ -986,7 +1097,7 @@ function ReviewsManager() {
           <input ref={inputRef} type="file" accept="image/*" onChange={pick} style={{ display: "none" }} />
           {img
             ? <img src={cldImg(img, IMG.review)} alt="" style={{ width: "100%", borderRadius: 12, border: "1px solid var(--line)", marginBottom: 4 }} />
-            : <div className="empty" style={{ padding: "18px 10px" }}><span className="big">🖼️</span>{t("reviewScreenshotHint")}</div>}
+            : <div className="empty" style={{ padding: "18px 10px" }}><span className="big">📸</span>{t("reviewScreenshotHint")}</div>}
           <label style={{ marginTop: 8, display: "block" }}>{t("rating")}</label>
           <Stars value={rating} onChange={setRating} />
           <div className="acts" style={{ marginTop: 12 }}>
