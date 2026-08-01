@@ -627,13 +627,7 @@ body:has(.site){background:#F2EADF;display:block;padding:0;overflow-x:clip;}
 .findus-btn{flex:0 0 auto;background:linear-gradient(135deg,var(--sage),#5C6A48);color:#F7F1E8;border-radius:999px;padding:11px 20px;font-weight:600;font-size:14px;text-decoration:none;white-space:nowrap;box-shadow:0 14px 30px -16px rgba(92,106,72,.85);}
 .findus-btn:hover{filter:brightness(1.05);}
 
-/* ── server-rendered SEO/info sections (About · Prices · FAQ · Visit) ──
-   in the HTML itself so Google + AI crawlers (no JS) can read them */
-.seo{margin-top:64px;display:grid;gap:52px;}
-.seo a{color:var(--sage);font-weight:600;text-decoration:none;}
-.seo a:hover{text-decoration:underline;}
-.seo a.findus-btn{color:#F7F1E8;} /* .seo a outranks .findus-btn — keep button text cream */
-.seo a.findus-btn:hover{text-decoration:none;}
+/* ── shared blocks for the side pages (/about · /prices · /faq) ── */
 .seo-cols{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px;}
 .seo-cols p{margin:0;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:20px 22px;font-size:15px;line-height:1.8;color:var(--ink-soft);box-shadow:var(--shadow-sm);}
 .seo-img{display:block;width:100%;height:auto;max-height:420px;object-fit:cover;border-radius:22px;border:1px solid var(--line);box-shadow:var(--shadow-sm);}
@@ -648,14 +642,26 @@ body:has(.site){background:#F2EADF;display:block;padding:0;overflow-x:clip;}
 .faqlist details{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:0 20px;box-shadow:var(--shadow-sm);}
 .faqlist summary{cursor:pointer;font-weight:600;font-size:15px;color:var(--ink);padding:15px 0;list-style-position:inside;}
 .faqlist details p{margin:0 0 16px;font-size:14.5px;line-height:1.75;color:var(--ink-soft);}
-.seo-visit{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;}
-.seo-visit>div{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:20px 22px;box-shadow:var(--shadow-sm);}
-.seo-visit h3{margin:0 0 10px;font-family:var(--serif);font-weight:500;font-size:17px;color:var(--ink);}
-.seo-visit p{margin:0 0 8px;font-size:14.5px;line-height:1.7;color:var(--ink-soft);}
-.seo-visit .findus-btn{display:inline-block;margin-top:8px;}
 @media (max-width:760px){
-  .seo{margin-top:48px;gap:40px;}
-  .seo-cols,.seo-visit{grid-template-columns:1fr;}
+  .seo-cols{grid-template-columns:1fr;}
+}
+
+/* ── site footer (server-rendered; carries the HairSalon JSON-LD) ── */
+.bigfoot{margin-top:64px;border-top:1px solid var(--line);padding:36px 0 18px;}
+.bigfoot-grid{display:grid;grid-template-columns:1.3fr 1fr 1.2fr .9fr;gap:28px;}
+.bigfoot h4{font-family:var(--serif);font-weight:600;font-size:16px;color:var(--ink);margin:0 0 12px;}
+.bigfoot p{margin:0 0 8px;font-size:13.5px;line-height:1.7;color:var(--muted);}
+.bigfoot ul{list-style:none;margin:0;padding:0;display:grid;gap:8px;}
+.bigfoot li{font-size:14px;line-height:1.5;}
+.bigfoot a{color:var(--ink-soft);text-decoration:none;font-weight:600;}
+.bigfoot a:hover{color:var(--sage);}
+.bf-brand{display:flex;align-items:center;gap:9px;font-family:var(--serif);font-weight:600;font-size:19px;color:var(--ink);margin-bottom:10px;}
+.bf-brand img{height:32px;width:auto;display:block;}
+.bf-bottom{margin-top:28px;padding-top:16px;border-top:1px solid var(--line);text-align:center;font-size:13px;color:var(--muted);letter-spacing:.2px;}
+.bf-bottom b{color:var(--ink);font-weight:600;}
+@media (max-width:760px){
+  .bigfoot{margin-top:44px;}
+  .bigfoot-grid{grid-template-columns:1fr 1fr;gap:22px;}
 }
 
 /* ── guide pages (/braids-cairo · /dafayer-cairo) ─────────────── */

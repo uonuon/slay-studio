@@ -47,6 +47,9 @@ export async function GET() {
     "",
     "- Braids in Cairo — styles, real prices & how to book (EN): https://slay-studio.com/braids-cairo",
     "- ضفاير في القاهرة — الأنواع والأسعار الحقيقية (AR): https://slay-studio.com/dafayer-cairo",
+    "- Live price list: https://slay-studio.com/prices",
+    "- FAQ (EN/AR): https://slay-studio.com/faq",
+    "- About the studio: https://slay-studio.com/about",
   ];
 
   return new Response(lines.join("\n") + "\n", {

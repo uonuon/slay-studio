@@ -102,10 +102,6 @@ export default function App({ seoFooter = null }) {
               </div>
             )}
             {seoFooter}
-            <div className="sfoot">
-              <img className="sfoot-logo" src="/logo-s.png" alt="Slay Studio" />
-              <div>Slay Studio · <b>@slaystudioforbraids</b> · Fifth Settlement, New Cairo</div>
-            </div>
           </>
         )}
 

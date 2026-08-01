@@ -1,8 +1,17 @@
 export default function sitemap() {
   const now = new Date();
+  const page = (path, priority) => ({
+    url: `https://slay-studio.com${path}`,
+    lastModified: now,
+    changeFrequency: "weekly",
+    priority,
+  });
   return [
-    { url: "https://slay-studio.com", lastModified: now, changeFrequency: "weekly", priority: 1 },
-    { url: "https://slay-studio.com/braids-cairo", lastModified: now, changeFrequency: "weekly", priority: 0.8 },
-    { url: "https://slay-studio.com/dafayer-cairo", lastModified: now, changeFrequency: "weekly", priority: 0.8 },
+    page("", 1),
+    page("/braids-cairo", 0.8),
+    page("/dafayer-cairo", 0.8),
+    page("/prices", 0.7),
+    page("/faq", 0.6),
+    page("/about", 0.5),
   ];
 }
