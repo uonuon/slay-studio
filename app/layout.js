@@ -1,10 +1,9 @@
 import "./globals.css";
 import { LangProvider } from "@/lib/i18n";
 import Analytics from "@/components/Analytics";
-import { SOCIALS } from "@/lib/config";
 
-const TITLE = "Slay Studio — Braids in Fifth Settlement, New Cairo";
-const DESC = "Book braids, knotless, box braids & boho in Fifth Settlement, New Cairo. Pick your style and reserve online in minutes. احجزي ضفائرك أونلاين في التجمّع الخامس.";
+const TITLE = "Slay Studio — Hair Braiding in Cairo · ضفاير التجمع الخامس";
+const DESC = "Braids in Cairo: knotless, box braids, boho, cornrows & colored strands at Slay Studio, Fifth Settlement, New Cairo — in-studio or home service. Book online in minutes. ستوديو ضفاير في التجمع الخامس — نوتلس، بوكس برايدز، بوهو وخصل ملونة. احجزي أونلاين.";
 
 export const metadata = {
   metadataBase: new URL("https://slay-studio.com"),
@@ -12,13 +11,28 @@ export const metadata = {
   description: DESC,
   applicationName: "Slay Studio",
   keywords: [
-    "braids", "knotless braids", "box braids", "boho braids", "cornrows",
-    "hair salon", "fifth settlement", "new cairo", "egypt", "book braids online",
-    "ضفائر", "تجمع خامس", "القاهرة الجديدة", "صالون شعر", "نوتلس", "بوكس برايدز",
+    "braids cairo", "hair braiding cairo", "african braids cairo", "braiding salon cairo",
+    "knotless braids cairo", "box braids cairo", "boho braids", "cornrows", "protective styles",
+    "braids new cairo", "braids fifth settlement", "braids tagamoa", "book braids online",
+    "dafayer", "dafayer cairo", "5osal", "khosal", "kids braids cairo", "braids home service cairo",
+    "ضفاير", "ضفائر", "ضفاير افريقية", "ضفاير القاهرة", "ضفاير التجمع الخامس", "صالون ضفاير",
+    "خصل", "خصلات ملونة", "نوتلس", "بوكس برايدز", "بوهو", "كورن رو",
+    "تجمع خامس", "القاهرة الجديدة", "خدمة منزلية ضفاير",
   ],
   manifest: "/site.webmanifest",
   alternates: { canonical: "https://slay-studio.com" },
-  robots: { index: true, follow: true },
+  robots: {
+    index: true,
+    follow: true,
+    // "large" lets Google show a big image thumbnail next to the result
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
   icons: {
     icon: [
       { url: "/favicon.svg", type: "image/svg+xml" },
@@ -46,41 +60,8 @@ export const viewport = {
   maximumScale: 1,
 };
 
-const jsonLd = {
-  "@context": "https://schema.org",
-  "@type": "HairSalon",
-  name: "Slay Studio",
-  image: "https://slay-studio.com/og-image.png",
-  url: "https://slay-studio.com",
-  telephone: "+201555842544",
-  priceRange: "$$",
-  currenciesAccepted: "EGP",
-  description: DESC,
-  address: {
-    "@type": "PostalAddress",
-    streetAddress: "Villa 19, Nargis 5",
-    addressLocality: "Fifth Settlement, New Cairo",
-    addressRegion: "Cairo",
-    addressCountry: "EG",
-  },
-  geo: {
-    "@type": "GeoCoordinates",
-    latitude: 30.011137,
-    longitude: 31.464403,
-  },
-  hasMap: "https://www.google.com/maps?q=30.011137008666992,31.46440315246582&z=17&hl=en",
-  areaServed: "New Cairo",
-  sameAs: [SOCIALS.instagram, SOCIALS.tiktok],
-  openingHoursSpecification: [
-    {
-      "@type": "OpeningHoursSpecification",
-      dayOfWeek: ["Saturday", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday"],
-      opens: "11:00",
-      closes: "21:00",
-    },
-  ],
-};
-
+// Structured data (HairSalon + FAQPage with live prices/rating) is rendered
+// server-side inside the page by components/SeoSections.js.
 export default function RootLayout({ children }) {
   return (
     <html lang="en" dir="ltr" translate="no">
@@ -88,7 +69,6 @@ export default function RootLayout({ children }) {
         {/* App has its own AR/EN toggle — stop browser auto-translate, which
             rewrites text nodes and crashes React (insertBefore NotFoundError). */}
         <meta name="google" content="notranslate" />
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       </head>
       <body>
         <LangProvider>{children}</LangProvider>

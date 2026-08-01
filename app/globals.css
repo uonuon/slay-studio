@@ -624,6 +624,35 @@ body:has(.site){background:#F2EADF;display:block;padding:0;overflow-x:clip;}
 .findus-btn{flex:0 0 auto;background:linear-gradient(135deg,var(--sage),#5C6A48);color:#F7F1E8;border-radius:999px;padding:11px 20px;font-weight:600;font-size:14px;text-decoration:none;white-space:nowrap;box-shadow:0 14px 30px -16px rgba(92,106,72,.85);}
 .findus-btn:hover{filter:brightness(1.05);}
 
+/* ── server-rendered SEO/info sections (About · Prices · FAQ · Visit) ──
+   in the HTML itself so Google + AI crawlers (no JS) can read them */
+.seo{margin-top:64px;display:grid;gap:52px;}
+.seo a{color:var(--sage);font-weight:600;text-decoration:none;}
+.seo a:hover{text-decoration:underline;}
+.seo-cols{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px;}
+.seo-cols p{margin:0;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:20px 22px;font-size:15px;line-height:1.8;color:var(--ink-soft);box-shadow:var(--shadow-sm);}
+.seo-img{display:block;width:100%;height:auto;max-height:420px;object-fit:cover;border-radius:22px;border:1px solid var(--line);box-shadow:var(--shadow-sm);}
+.seo-tablewrap{border:1px solid var(--line);border-radius:20px;overflow-x:auto;background:var(--card);box-shadow:var(--shadow-sm);}
+.seo-table{width:100%;border-collapse:collapse;font-size:15px;}
+.seo-table th{font-family:var(--serif);font-weight:500;font-size:16px;color:var(--ink);}
+.seo-table th,.seo-table td{padding:13px 20px;text-align:start;border-bottom:1px solid var(--line);color:var(--ink-soft);}
+.seo-table tbody tr:last-child td{border-bottom:0;}
+.seo-table td:last-child{font-weight:600;color:var(--ink);}
+.seo-note{margin:12px 4px 0;font-size:13px;color:var(--muted);}
+.faqlist{display:grid;gap:10px;}
+.faqlist details{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:0 20px;box-shadow:var(--shadow-sm);}
+.faqlist summary{cursor:pointer;font-weight:600;font-size:15px;color:var(--ink);padding:15px 0;list-style-position:inside;}
+.faqlist details p{margin:0 0 16px;font-size:14.5px;line-height:1.75;color:var(--ink-soft);}
+.seo-visit{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;}
+.seo-visit>div{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:20px 22px;box-shadow:var(--shadow-sm);}
+.seo-visit h3{margin:0 0 10px;font-family:var(--serif);font-weight:500;font-size:17px;color:var(--ink);}
+.seo-visit p{margin:0 0 8px;font-size:14.5px;line-height:1.7;color:var(--ink-soft);}
+.seo-visit .findus-btn{display:inline-block;margin-top:8px;}
+@media (max-width:760px){
+  .seo{margin-top:48px;gap:40px;}
+  .seo-cols,.seo-visit{grid-template-columns:1fr;}
+}
+
 /* ── booking: product-detail layout (image left, choices right) ── */
 .bookgrid{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:34px;align-items:start;padding-top:20px;}
 .book-media{position:sticky;top:84px;}

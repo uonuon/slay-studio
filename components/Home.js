@@ -6,17 +6,8 @@ import { cldImg, IMG } from "@/lib/img";
 import { store } from "@/lib/store";
 import { useLang, laneLabel, tName } from "@/lib/i18n";
 
-function reviewJsonLd(reviews) {
-  const count = reviews.length;
-  const avg = count ? reviews.reduce((s, r) => s + (r.rating || 5), 0) / count : 0;
-  return {
-    "@context": "https://schema.org",
-    "@type": "HairSalon",
-    name: "Slay Studio",
-    url: "https://slay-studio.com",
-    aggregateRating: { "@type": "AggregateRating", ratingValue: avg.toFixed(1), reviewCount: count, bestRating: 5 },
-  };
-}
+// (AggregateRating JSON-LD moved server-side into components/SeoSections.js
+// so non-JS crawlers see it too — one HairSalon entity, no duplicates.)
 
 // warm placeholder gradient per lane (used until a style photo is uploaded)
 const LANE_GRAD = {
@@ -237,7 +228,6 @@ export default function Home({ services, settings, onPick, mode = "studio", setM
               );
             })}
           </div>
-          <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(reviewJsonLd(sortedReviews)) }} />
         </div>
       )}
 

@@ -34,7 +34,7 @@ function SiteNav({ onBook }) {
   );
 }
 
-export default function App() {
+export default function App({ seoFooter = null }) {
   const { lang } = useLang();
   const [ready, setReady] = useState(false);
   const [view, setView] = useState("home");
@@ -98,6 +98,7 @@ export default function App() {
                 <Home services={services} settings={settings} onPick={goBook} mode={mode} setMode={setMode} />
               </div>
             )}
+            {seoFooter}
             <div className="sfoot">Slay Studio · <b>@braids.bymarmora</b> · Fifth Settlement, New Cairo</div>
           </>
         )}
