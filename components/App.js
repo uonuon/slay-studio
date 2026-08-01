@@ -22,7 +22,10 @@ function SiteNav({ onBook }) {
   return (
     <nav className={"snav" + (scrolled ? " scrolled" : "")}>
       <div className="snav-in">
-        <div className="snav-brand">Slay Studio<span className="dot">.</span></div>
+        <div className="snav-brand">
+          <img className="snav-logo" src="/logo-s.png" alt="Slay Studio logo" />
+          Slay Studio<span className="dot">.</span>
+        </div>
         <div className="snav-sp" />
         <div className="langtoggle">
           <button className={lang === "ar" ? "on" : ""} onClick={() => setLang("ar")}>ع</button>
@@ -99,7 +102,10 @@ export default function App({ seoFooter = null }) {
               </div>
             )}
             {seoFooter}
-            <div className="sfoot">Slay Studio · <b>@braids.bymarmora</b> · Fifth Settlement, New Cairo</div>
+            <div className="sfoot">
+              <img className="sfoot-logo" src="/logo-s.png" alt="Slay Studio" />
+              <div>Slay Studio · <b>@slaystudioforbraids</b> · Fifth Settlement, New Cairo</div>
+            </div>
           </>
         )}
 

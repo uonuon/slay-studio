@@ -42,6 +42,11 @@ export async function GET() {
     "- Home service available across Cairo & New Cairo (Fifth Settlement, Rehab, Madinaty).",
     "- Little Slays: kids' braids and birthday party packages (10–30 girls).",
     "- Book online in minutes: pick a style, size, date and time at https://slay-studio.com.",
+    "",
+    "## Guides (live prices, updated automatically)",
+    "",
+    "- Braids in Cairo — styles, real prices & how to book (EN): https://slay-studio.com/braids-cairo",
+    "- ضفاير في القاهرة — الأنواع والأسعار الحقيقية (AR): https://slay-studio.com/dafayer-cairo",
   ];
 
   return new Response(lines.join("\n") + "\n", {

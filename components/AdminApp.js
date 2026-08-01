@@ -74,7 +74,7 @@ export default function AdminApp() {
         <div className="viewfade">
           <Login onBack={() => router.push("/")} onSuccess={onSuccess} />
         </div>
-        <div className="foot">slay studio · <b>@braids.bymarmora</b></div>
+        <div className="foot">slay studio · <b>@slaystudioforbraids</b></div>
       </div>
     );
   }

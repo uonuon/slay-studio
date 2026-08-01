@@ -2,22 +2,9 @@
 // crawlers (which don't run JavaScript) can read the studio's services,
 // prices, FAQ and location. Also carries the site's structured data.
 import { SOCIALS } from "@/lib/config";
-import { familiesOf, minPrice } from "@/lib/seo-data";
+import { familiesOf, minPrice, AR_NAMES, fmtEGP } from "@/lib/seo-data";
 
 const SITE = "https://slay-studio.com";
-
-// Arabic display names for the seeded style families (fallback: EN name).
-const AR_NAMES = {
-  "Knotless braids": "ضفاير نوتلس",
-  "Box braids": "بوكس برايدز",
-  "Boho rasta": "بوهو راستا",
-  "Cornrows": "كورن رو",
-  "Dutch braid": "ضفيرة هولندية",
-  "Rumi braid": "ضفيرة رومي",
-  "Party package": "باقة حفلات للبنات",
-};
-
-const fmtEGP = (n) => (n ? n.toLocaleString("en-US") : null);
 
 // workDays uses JS getDay() indexes: 0 = Sunday … 5 = Friday, 6 = Saturday
 const DAYS_EN = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -206,6 +193,11 @@ export default function SeoSections({ services = [], reviews = [], settings = {}
             دقايق.
           </p>
         </div>
+        <p className="seo-note">
+          Read more: <a href="/braids-cairo">Braids in Cairo — the 2026 guide with real prices</a>
+          {" · "}
+          <a href="/dafayer-cairo" lang="ar" dir="rtl">دليل الضفاير في القاهرة والأسعار</a>
+        </p>
         <img
           className="seo-img"
           src="/hero-braids.jpg"

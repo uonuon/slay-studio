@@ -419,8 +419,11 @@ body:has(.site){background:#F2EADF;display:block;padding:0;overflow-x:clip;}
 .snav{position:sticky;top:0;z-index:50;width:100%;
   background:rgba(242,234,223,.82);backdrop-filter:blur(16px) saturate(1.2);border-bottom:1px solid var(--line);}
 .snav-in{display:flex;align-items:center;gap:12px;max-width:1120px;margin:0 auto;padding:13px var(--pad);}
-.snav-brand{font-family:var(--serif);font-weight:600;font-size:21px;letter-spacing:.2px;color:var(--ink);}
+.snav-brand{font-family:var(--serif);font-weight:600;font-size:21px;letter-spacing:.2px;color:var(--ink);display:flex;align-items:center;gap:9px;}
 .snav-brand .dot{color:var(--sage);}
+.snav-logo{height:30px;width:auto;display:block;}
+.sfoot{display:grid;justify-items:center;gap:10px;}
+.sfoot-logo{height:44px;width:auto;opacity:.9;}
 .snav-sp{flex:1;}
 .snav-book{font-family:var(--sans);font-weight:600;font-size:14px;color:#F7F1E8;cursor:pointer;
   background:linear-gradient(135deg,var(--sage),#5C6A48);border:none;padding:11px 17px;border-radius:30px;
@@ -629,6 +632,8 @@ body:has(.site){background:#F2EADF;display:block;padding:0;overflow-x:clip;}
 .seo{margin-top:64px;display:grid;gap:52px;}
 .seo a{color:var(--sage);font-weight:600;text-decoration:none;}
 .seo a:hover{text-decoration:underline;}
+.seo a.findus-btn{color:#F7F1E8;} /* .seo a outranks .findus-btn — keep button text cream */
+.seo a.findus-btn:hover{text-decoration:none;}
 .seo-cols{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px;}
 .seo-cols p{margin:0;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:20px 22px;font-size:15px;line-height:1.8;color:var(--ink-soft);box-shadow:var(--shadow-sm);}
 .seo-img{display:block;width:100%;height:auto;max-height:420px;object-fit:cover;border-radius:22px;border:1px solid var(--line);box-shadow:var(--shadow-sm);}
@@ -652,6 +657,26 @@ body:has(.site){background:#F2EADF;display:block;padding:0;overflow-x:clip;}
   .seo{margin-top:48px;gap:40px;}
   .seo-cols,.seo-visit{grid-template-columns:1fr;}
 }
+
+/* ── guide pages (/braids-cairo · /dafayer-cairo) ─────────────── */
+.guide{max-width:840px;padding-bottom:40px;}
+.gnav{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:22px 0 8px;}
+.gnav-brand{display:flex;align-items:center;gap:9px;font-family:var(--serif);font-weight:600;font-size:20px;color:var(--ink);text-decoration:none;}
+.gnav-brand img{height:28px;width:auto;display:block;}
+.guide h1{font-family:var(--serif);font-weight:500;font-size:clamp(30px,4.4vw,44px);letter-spacing:-.6px;line-height:1.15;color:var(--ink);margin:26px 0 14px;}
+.gyear{display:inline-block;vertical-align:middle;background:var(--sage-soft);color:var(--sage);border-radius:999px;padding:6px 14px;font-family:var(--sans);font-size:13px;font-weight:700;letter-spacing:.4px;margin-inline-start:10px;white-space:nowrap;}
+.guide .lede{font-size:17px;line-height:1.8;color:var(--ink-soft);margin:0 0 30px;max-width:64ch;}
+.guide h2{font-family:var(--serif);font-weight:500;font-size:clamp(22px,3vw,28px);color:var(--ink);margin:40px 0 14px;}
+.guide p{font-size:15.5px;line-height:1.8;color:var(--ink-soft);}
+.glist{margin:0;padding:0;list-style:none;display:grid;gap:10px;}
+.glist li{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 18px;font-size:15px;line-height:1.75;color:var(--ink-soft);}
+.glist strong{color:var(--ink);}
+.gcta{margin-top:44px;text-align:center;background:var(--card);border:1px solid var(--line);border-radius:22px;padding:28px 22px;box-shadow:var(--shadow-sm);}
+.gcta p{margin:0 0 14px;}
+.gcta .findus-btn{display:inline-block;}
+.guide .sfoot{margin-top:52px;}
+.guide a{color:var(--sage);}
+.guide a.findus-btn{color:#F7F1E8;}
 
 /* ── booking: product-detail layout (image left, choices right) ── */
 .bookgrid{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:34px;align-items:start;padding-top:20px;}
