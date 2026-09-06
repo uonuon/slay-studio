@@ -1177,15 +1177,6 @@ html:has(.site){scroll-behavior:smooth;}
 .chip2{background:none;border:none;padding:0;font-size:12.5px;color:var(--ink-soft);font-weight:500;}
 .chip2+.chip2::before{content:"✦";color:var(--gold);font-size:8px;margin-inline-end:12px;vertical-align:2px;}
 
-/* rotating pink badge pinned to the arch */
-.arch-badge{position:absolute;z-index:3;width:88px;height:88px;inset-inline-start:-14px;bottom:20px;
-  display:flex;align-items:center;justify-content:center;border-radius:50%;
-  background:rgba(15,11,18,.88);backdrop-filter:blur(6px);
-  border:1px solid rgba(255,77,149,.5);box-shadow:0 18px 40px -18px rgba(0,0,0,.7);}
-.arch-badge svg{position:absolute;inset:6px;animation:spin 22s linear infinite;}
-.arch-badge-c{font-size:14px;color:var(--gold);}
-@keyframes spin{to{transform:rotate(1turn)}}
-
 /* marquee — slimmer */
 .marq{margin-top:22px;padding:10px 0;}
 .marq span{font-size:13.5px;}
@@ -1243,13 +1234,6 @@ html:has(.site){scroll-behavior:smooth;}
 @media(max-width:880px){
   .hero2{padding:22px 0 12px;gap:22px;}
   .skelgrid{grid-template-columns:repeat(2,1fr);}
-  /* tuck the seal fully INSIDE the arch's bottom-left so it can't hang off the
-     edge or clip on the rounded corner (it has whitespace to lean into only on
-     the 2-column desktop layout) */
-  .arch-badge{width:68px;height:68px;inset-inline-start:12px;inset-inline-end:auto;bottom:12px;}
-}
-@media(max-width:420px){
-  .arch-badge{width:62px;height:62px;inset-inline-start:10px;bottom:10px;}
 }
 @media(max-width:560px){
   .h1{font-size:clamp(27px,7vw,36px);}

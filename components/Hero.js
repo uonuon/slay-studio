@@ -27,18 +27,7 @@ export default function Hero({ onBook }) {
 
       <div className="arch-wrap">
         <div className="arch">
-          <div className="arch-photo" style={{ backgroundImage: "url(/hero-clip.jpg)" }} />
-        </div>
-        <div className="arch-badge" aria-hidden="true">
-          <svg viewBox="0 0 100 100">
-            <defs>
-              <path id="abc" d="M50,50 m-38,0 a38,38 0 1,1 76,0 a38,38 0 1,1 -76,0" />
-            </defs>
-            <text fill="#D6C8D3" fontSize="7.6" letterSpacing="1.3">
-              <textPath href="#abc">SLAY STUDIO ✦ NEW CAIRO ✦ BRAIDS ✦ </textPath>
-            </text>
-          </svg>
-          <span className="arch-badge-c">✦</span>
+          <div className="arch-photo" style={{ backgroundImage: "url(/hero-braids.jpg)" }} />
         </div>
       </div>
     </div>
