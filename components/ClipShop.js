@@ -1,8 +1,11 @@
 "use client";
-// Clip-in braids shop (/clip-ins): pick a braid style → color → chains &
-// accessories → order on WhatsApp with the choices pre-written. No booking is
-// saved — the chat handles price confirmation, payment and delivery.
-import { useEffect, useState } from "react";
+// Clip-in braids shop (/clip-ins): guided flow — pick a braid style first,
+// then the color step reveals, then chains & accessories, then order on
+// WhatsApp with the choices pre-written. No booking is saved — the chat
+// handles price confirmation, payment and delivery.
+// Each braid type carries a swipeable strip of photos (settings.clipins
+// types[].imgs); colors & extras render as photo tiles.
+import { useEffect, useRef, useState } from "react";
 import { store } from "@/lib/store";
 import { waLink, toast } from "@/lib/util";
 import { track } from "@/lib/analytics";
@@ -38,6 +41,87 @@ function ClipNav({ onOrder }) {
   );
 }
 
+// One braid-type card with a swipeable photo strip. Tap the card to choose the
+// type; once chosen, tapping a photo opens it full-screen.
+function TypeCard({ g, on, idx, onPick, onZoom }) {
+  const { lang, t } = useLang();
+  const stripRef = useRef(null);
+  const [slide, setSlide] = useState(0);
+  const imgs = g.imgs?.length ? g.imgs : g.img ? [g.img] : [];
+
+  const onScroll = (e) => {
+    const el = e.currentTarget;
+    const i = Math.round(el.scrollLeft / Math.max(1, el.clientWidth));
+    setSlide((s) => (s === i ? s : i));
+  };
+  const nudge = (d) => (e) => {
+    e.stopPropagation();
+    stripRef.current?.scrollBy({ left: d * stripRef.current.clientWidth, behavior: "smooth" });
+  };
+
+  return (
+    <article className={"scard" + (on ? " on" : "")} style={{ "--i": idx % 9 }} onClick={() => onPick(g)}>
+      <div className="scard-media">
+        {imgs.length ? (
+          <>
+            {/* strip is always LTR so slide math stays simple in Arabic too */}
+            <div className="scard-strip" dir="ltr" ref={stripRef} onScroll={onScroll}>
+              {imgs.map((src, i) => (
+                <div
+                  key={i}
+                  className="scard-slide"
+                  style={{ backgroundImage: `url(${cldImg(src, IMG.thumb)})` }}
+                  onClick={(e) => { if (on) { e.stopPropagation(); onZoom(cldImg(src, IMG.full)); } }}
+                />
+              ))}
+            </div>
+            {imgs.length > 1 && (
+              <>
+                <button className="strip-nav prev" onClick={nudge(-1)} aria-label="previous photo">‹</button>
+                <button className="strip-nav next" onClick={nudge(1)} aria-label="next photo">›</button>
+                <div className="scard-dots">{imgs.map((_, i) => <i key={i} className={i === slide ? "on" : ""} />)}</div>
+              </>
+            )}
+          </>
+        ) : (
+          <div className="scard-slide ph" style={{ background: TYPE_GRADS[idx % TYPE_GRADS.length] }}>
+            <span className="scard-flutes" />
+            <span className="scard-mono">{biName(g, lang).charAt(0)}</span>
+          </div>
+        )}
+        <span className="scard-emoji">🎀</span>
+      </div>
+      <div className="scard-body">
+        <div className="scard-name">{biName(g, lang)}</div>
+        <div className="scard-foot">
+          {+g.price > 0
+            ? <div className="price2"><span className="amt">{(+g.price).toLocaleString()}</span> <span className="egp">{t("egp")}</span></div>
+            : <div className="price2 home">💬 {t("clipPriceAsk")}</div>}
+          <div className="go2">{on ? "✓" : "→"}</div>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+// Photo tile for a color or an extra (falls back to hex block / 🎀)
+function OptTile({ it, on, onPick, t }) {
+  const { lang } = useLang();
+  return (
+    <button type="button" className={"clipopt" + (on ? " on" : "")} onClick={() => onPick(it)}>
+      {it.img
+        ? <span className="im" style={{ backgroundImage: `url(${cldImg(it.img, IMG.thumb)})` }} />
+        : it.hex
+          ? <span className="im" style={{ background: it.hex }} />
+          : <span className="im ph2">🎀</span>}
+      <span className="nm">
+        {on ? "✓ " : ""}{biName(it, lang)}
+        {+it.price > 0 ? <i className="ad"> +{(+it.price).toLocaleString()} {t("egp")}</i> : null}
+      </span>
+    </button>
+  );
+}
+
 export default function ClipShop() {
   const { lang, t } = useLang();
   const [settings, setSettings] = useState(null);
@@ -45,6 +129,8 @@ export default function ClipShop() {
   const [color, setColor] = useState(null);
   const [extras, setExtras] = useState([]); // selected extra ids
   const [zoom, setZoom] = useState(null);
+  const colorRef = useRef(null);
+  const extraRef = useRef(null);
 
   useEffect(() => {
     (async () => {
@@ -60,8 +146,25 @@ export default function ClipShop() {
   const extraList = shop.extras || [];
   const chosen = extraList.filter((x) => extras.includes(x.id));
 
-  const toggleExtra = (id) =>
-    setExtras((xs) => (xs.includes(id) ? xs.filter((x) => x !== id) : [...xs, id]));
+  // guided reveal: colors open after a braid is picked, extras after a color
+  const colorsOpen = !!type && colors.length > 0;
+  const extrasOpen = !!type && (color || !colors.length) && extraList.length > 0;
+  const barOpen = !!type && (color || !colors.length);
+
+  const scrollTo = (ref) =>
+    setTimeout(() => ref.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 90);
+
+  const pickType = (g) => {
+    setType(g);
+    if (colors.length) scrollTo(colorRef);
+    else if (extraList.length) scrollTo(extraRef);
+  };
+  const pickColor = (c) => {
+    setColor(c);
+    if (extraList.length) scrollTo(extraRef);
+  };
+  const toggleExtra = (x) =>
+    setExtras((xs) => (xs.includes(x.id) ? xs.filter((i) => i !== x.id) : [...xs, x.id]));
 
   // total shown only once the braid itself has a price; add-on prices ride along
   const total = (+type?.price || 0) + (+color?.price || 0) + chosen.reduce((s, x) => s + (+x.price || 0), 0);
@@ -112,7 +215,7 @@ export default function ClipShop() {
 
         {!loading && !off && (
           <>
-            {/* 01 — braid style */}
+            {/* 01 — braid style (always open) */}
             <section className="clip-step">
               <div className="lane2-head">
                 <span className="lane2-num">01</span>
@@ -120,102 +223,60 @@ export default function ClipShop() {
                 <span className="lane2-line" />
               </div>
               <div className="grid2">
-                {types.map((g, gi) => {
-                  const on = type?.id === g.id;
-                  return (
-                    <article key={g.id} className={"scard" + (on ? " on" : "")} style={{ "--i": gi % 9 }} onClick={() => setType(g)}>
-                      <div
-                        className="scard-img"
-                        style={g.img ? { backgroundImage: `url(${cldImg(g.img, IMG.thumb)})` } : { background: TYPE_GRADS[gi % TYPE_GRADS.length] }}
-                      >
-                        {!g.img && (
-                          <>
-                            <span className="scard-flutes" />
-                            <span className="scard-emoji">🎀</span>
-                            <span className="scard-mono">{biName(g, lang).charAt(0)}</span>
-                          </>
-                        )}
-                        {g.img && (
-                          <span
-                            className="scard-emoji"
-                            style={{ cursor: "zoom-in" }}
-                            onClick={(e) => { e.stopPropagation(); setZoom(cldImg(g.img, IMG.full)); }}
-                          >🔍</span>
-                        )}
-                      </div>
-                      <div className="scard-body">
-                        <div className="scard-name">{biName(g, lang)}</div>
-                        <div className="scard-foot">
-                          {+g.price > 0
-                            ? <div className="price2"><span className="amt">{(+g.price).toLocaleString()}</span> <span className="egp">{t("egp")}</span></div>
-                            : <div className="price2 home">💬 {t("clipPriceAsk")}</div>}
-                          <div className="go2">{on ? "✓" : "→"}</div>
-                        </div>
-                      </div>
-                    </article>
-                  );
-                })}
+                {types.map((g, gi) => (
+                  <TypeCard key={g.id} g={g} idx={gi} on={type?.id === g.id} onPick={pickType} onZoom={setZoom} />
+                ))}
               </div>
             </section>
 
-            {/* 02 — color */}
-            {colors.length > 0 && (
-              <section className="clip-step">
+            {/* 02 — color (opens after a braid is picked) */}
+            {colorsOpen && (
+              <section className="clip-step viewfade" ref={colorRef}>
                 <div className="lane2-head">
                   <span className="lane2-num">02</span>
                   <h2 className="lane2-title">{t("clipStep2")}</h2>
                   <span className="lane2-line" />
                 </div>
-                <div className="swatches">
+                <div className="clipopts">
                   {colors.map((c) => (
-                    <button key={c.id} type="button" className={"sw" + (color?.id === c.id ? " on" : "")} onClick={() => setColor(c)}>
-                      {c.img
-                        ? <span className="sw-dot img" style={{ backgroundImage: `url(${cldImg(c.img, IMG.swatch)})` }} />
-                        : <span className="sw-dot" style={{ background: c.hex || "#666" }} />}
-                      <span className="sw-name">
-                        {biName(c, lang)}
-                        {+c.price > 0 ? <span className="sw-add"> +{(+c.price).toLocaleString()}</span> : null}
-                      </span>
-                    </button>
+                    <OptTile key={c.id} it={c} on={color?.id === c.id} onPick={pickColor} t={t} />
                   ))}
                 </div>
               </section>
             )}
 
-            {/* 03 — chains & accessories */}
-            {extraList.length > 0 && (
-              <section className="clip-step">
+            {/* 03 — chains & accessories (opens after the color) */}
+            {extrasOpen && (
+              <section className="clip-step viewfade" ref={extraRef}>
                 <div className="lane2-head">
                   <span className="lane2-num">{colors.length ? "03" : "02"}</span>
                   <h2 className="lane2-title">{t("clipStep3")}</h2>
                   <span className="lane2-line" />
                   <span className="clip-opt">{t("clipOptional")}</span>
                 </div>
-                <div className="chips">
-                  {extraList.map((x) => {
-                    const on = extras.includes(x.id);
-                    return (
-                      <div key={x.id} className={"chip" + (on ? " on" : "")} onClick={() => toggleExtra(x.id)}>
-                        <div className="cs">{on ? "✓ " : ""}{biName(x, lang)}</div>
-                        {+x.price > 0 && <div className="cp">+{(+x.price).toLocaleString()} {t("egp")}</div>}
-                      </div>
-                    );
-                  })}
+                <div className="clipopts">
+                  {extraList.map((x) => (
+                    <OptTile key={x.id} it={x} on={extras.includes(x.id)} onPick={toggleExtra} t={t} />
+                  ))}
                 </div>
               </section>
             )}
 
-            {/* sticky order bar */}
-            <div className="clipbar">
-              <div className="clipbar-sum">
-                {type ? <b>{biName(type, lang)}</b> : t("clipPickType")}
-                {color ? <> · {biName(color, lang)}</> : null}
-                {chosen.length > 0 ? <> · {chosen.map((x) => biName(x, lang)).join(" + ")}</> : null}
-                {showTotal ? <span className="clipbar-total"> · {total.toLocaleString()} {t("egp")}</span> : null}
+            {/* sticky order bar (appears once braid + color are chosen) */}
+            {barOpen && (
+              <div className="viewfade">
+                <div className="clipbar">
+                  <div className="clipbar-sum">
+                    <b>{biName(type, lang)}</b>
+                    {color ? <> · {biName(color, lang)}</> : null}
+                    {chosen.length > 0 ? <> · {chosen.map((x) => biName(x, lang)).join(" + ")}</> : null}
+                    {showTotal ? <span className="clipbar-total"> · {total.toLocaleString()} {t("egp")}</span> : null}
+                  </div>
+                  <button className="btn wa" onClick={order}>{t("clipOrderWa")}</button>
+                </div>
+                <small className="clipnote">{t("clipDeliveryNote")}</small>
               </div>
-              <button className="btn wa" onClick={order}>{t("clipOrderWa")}</button>
-            </div>
-            <small className="clipnote">{t("clipDeliveryNote")}</small>
+            )}
 
             {/* cross-sell back to the booking site */}
             <div className="clipcross">

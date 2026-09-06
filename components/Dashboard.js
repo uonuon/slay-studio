@@ -732,32 +732,80 @@ function ClipItemRow({ it, t, onPatch, onRemove, withHex }) {
   );
 }
 
+// Braid-type editor row: names + price, plus a strip of photos (a type can
+// carry several photos — they show as a swipeable gallery on the site).
+function ClipTypeRow({ it, t, onPatch, onRemove }) {
+  const ref = useRef(null);
+  const [busy, setBusy] = useState(false);
+  const imgs = it.imgs || [];
+  const pick = async (e) => {
+    const files = Array.from(e.target.files || []); e.target.value = "";
+    if (!files.length) return; setBusy(true);
+    try {
+      const urls = [];
+      for (const f of files) urls.push(await uploadImage(f));
+      onPatch({ imgs: [...imgs, ...urls] });
+    } catch (err) { toast("⚠︎"); }
+    setBusy(false);
+  };
+  return (
+    <div className="cliptype">
+      <div className="cliprow" style={{ marginTop: 0 }}>
+        <div className="cliprow-fields">
+          <input value={it.name || ""} onChange={(e) => onPatch({ name: e.target.value })} placeholder={t("nameEnLabel")} dir="ltr" />
+          <input value={it.nameAr || ""} onChange={(e) => onPatch({ nameAr: e.target.value })} placeholder={t("nameArLabel")} dir="rtl" />
+        </div>
+        <input className="sw-price" value={it.price || ""} onChange={(e) => onPatch({ price: +e.target.value || 0 })} placeholder={t("pricePh")} inputMode="numeric" />
+        <button className="danger sm" onClick={onRemove}>✕</button>
+      </div>
+      <input ref={ref} type="file" accept="image/*" multiple onChange={pick} style={{ display: "none" }} />
+      <div className="cliptype-pics">
+        {imgs.map((src, i) => (
+          <div key={i} className="cliptype-pic" style={{ backgroundImage: `url(${cldImg(src, IMG.swatch)})` }}>
+            <button type="button" onClick={() => onPatch({ imgs: imgs.filter((_, j) => j !== i) })}>✕</button>
+          </div>
+        ))}
+        <button type="button" className="sw-imgbtn" disabled={busy} onClick={() => ref.current?.click()}>＋</button>
+      </div>
+    </div>
+  );
+}
+
 function ClipinsPanel({ settings, setSettings }) {
   const { t } = useLang();
-  const [draft, setDraft] = useState(() =>
-    JSON.parse(JSON.stringify(settings.clipins || { enabled: true, types: [], colors: [], extras: [] })));
+  // normalize older single-`img` types into the multi-photo `imgs` shape
+  const [draft, setDraft] = useState(() => {
+    const c = JSON.parse(JSON.stringify(settings.clipins || {}));
+    return {
+      enabled: true, colors: [], extras: [], ...c,
+      types: (c.types || []).map((x) => ({ ...x, imgs: x.imgs || (x.img ? [x.img] : []) })),
+    };
+  });
 
   const upd = (key, i, patch) => setDraft((d) => ({ ...d, [key]: d[key].map((x, j) => (j === i ? { ...x, ...patch } : x)) }));
   const add = (key, extra = {}) => setDraft((d) => ({ ...d, [key]: [...(d[key] || []), { id: uid(), name: "", nameAr: "", price: 0, img: "", ...extra }] }));
   const rm = (key, i) => setDraft((d) => ({ ...d, [key]: d[key].filter((_, j) => j !== i) }));
 
   const save = async () => {
-    const cleanList = (list) => (list || [])
+    const cleanList = (list, multi) => (list || [])
       .filter((x) => ((x.name || "") + (x.nameAr || "")).trim())
-      .map((x) => ({ ...x, name: (x.name || "").trim(), nameAr: (x.nameAr || "").trim(), price: +x.price || 0 }));
-    const clean = { ...draft, types: cleanList(draft.types), colors: cleanList(draft.colors), extras: cleanList(draft.extras) };
+      .map((x) => ({
+        ...x, name: (x.name || "").trim(), nameAr: (x.nameAr || "").trim(), price: +x.price || 0,
+        ...(multi ? { imgs: x.imgs || [], img: (x.imgs || [])[0] || "" } : {}),
+      }));
+    const clean = { ...draft, types: cleanList(draft.types, true), colors: cleanList(draft.colors), extras: cleanList(draft.extras) };
     const ns = { ...settings, clipins: clean };
     await store.saveSettings(ns); setSettings(ns); setDraft(JSON.parse(JSON.stringify(clean))); toast(t("saved"));
   };
 
-  const section = (key, title, addLabel, withHex) => (
+  const section = (key, title, addLabel, opts = {}) => (
     <div className="card" style={{ background: "var(--card-2)" }}>
       <div className="svcn" style={{ color: "var(--ink)", marginBottom: 6 }}>{title}</div>
-      {(draft[key] || []).map((it, i) => (
-        <ClipItemRow key={it.id} it={it} t={t} withHex={withHex}
-          onPatch={(p) => upd(key, i, p)} onRemove={() => rm(key, i)} />
-      ))}
-      <button className="ghost sm" style={{ marginTop: 10 }} onClick={() => add(key, withHex ? { hex: "#1a1a1a" } : {})}>＋ {addLabel}</button>
+      {(draft[key] || []).map((it, i) => opts.multi
+        ? <ClipTypeRow key={it.id} it={it} t={t} onPatch={(p) => upd(key, i, p)} onRemove={() => rm(key, i)} />
+        : <ClipItemRow key={it.id} it={it} t={t} withHex={opts.withHex} onPatch={(p) => upd(key, i, p)} onRemove={() => rm(key, i)} />)}
+      <button className="ghost sm" style={{ marginTop: 10 }}
+        onClick={() => add(key, opts.multi ? { imgs: [] } : opts.withHex ? { hex: "#1a1a1a" } : {})}>＋ {addLabel}</button>
     </div>
   );
 
@@ -770,9 +818,9 @@ function ClipinsPanel({ settings, setSettings }) {
           <span>🎀 {t("clipShow")}</span>
         </label>
       </div>
-      {section("types", t("clipTypesTitle"), t("addClipType"), false)}
-      {section("colors", t("clipColorsTitle"), t("addClipColor"), true)}
-      {section("extras", t("clipExtrasTitle"), t("addClipExtra"), false)}
+      {section("types", t("clipTypesTitle"), t("addClipType"), { multi: true })}
+      {section("colors", t("clipColorsTitle"), t("addClipColor"), { withHex: true })}
+      {section("extras", t("clipExtrasTitle"), t("addClipExtra"), {})}
       <button className="pink full" style={{ marginTop: 8 }} onClick={save}>{t("save")}</button>
     </div>
   );

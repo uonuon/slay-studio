@@ -38,7 +38,7 @@ function SiteNav({ onBook }) {
 }
 
 export default function App({ seoFooter = null }) {
-  const { lang } = useLang();
+  const { lang, t } = useLang();
   const [ready, setReady] = useState(false);
   const [view, setView] = useState("home");
   const [services, setServices] = useState([]);
@@ -91,6 +91,12 @@ export default function App({ seoFooter = null }) {
       <div className="shell">
         {view === "home" && (
           <>
+            {/* clip-ins entry — very first thing on the page, above the hero */}
+            {settings?.clipins?.enabled && (settings.clipins.types || []).length > 0 && (
+              <a className="clipribbon" href="/clip-ins">
+                🎀 <b>{t("clipRibbon1")}</b> {t("clipRibbon2")} <span className="rib-arr">→</span>
+              </a>
+            )}
             <Hero onBook={scrollToStyles} />
             {loading ? (
               <div className="skelgrid" key="skel" aria-hidden="true">
