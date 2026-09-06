@@ -8,6 +8,7 @@ export default function sitemap() {
   });
   return [
     page("", 1),
+    page("/clip-ins", 0.9),
     page("/braids-cairo", 0.8),
     page("/dafayer-cairo", 0.8),
     page("/prices", 0.7),

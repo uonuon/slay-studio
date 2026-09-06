@@ -103,6 +103,7 @@ export default function SiteFooter({ services = [], reviews = [], settings = {} 
         <div>
           <h4>Explore · استكشفي</h4>
           <ul>
+            <li><a href="/clip-ins">Clip-in braids · ضفاير كليبس</a></li>
             <li><a href="/prices">Prices · الأسعار</a></li>
             <li><a href="/faq">FAQ · أسئلة شايعة</a></li>
             <li><a href="/about">About · عن الاستوديو</a></li>

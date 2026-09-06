@@ -189,6 +189,17 @@ export default function Home({ services, settings, onPick, mode = "studio", setM
         })}
       </div>
 
+      {/* clip-in braids shop teaser → /clip-ins (hidden if the owner turns the shop off) */}
+      {settings?.clipins?.enabled && (settings.clipins.types || []).length > 0 && (
+        <section className="colourband clipband rv">
+          <div className="colourband-copy">
+            <h3>{t("clipBandTitle")}</h3>
+            <p>{t("clipBandSub")}</p>
+          </div>
+          <a className="homecta-btn" href="/clip-ins">🎀 {t("clipBandBtn")}</a>
+        </section>
+      )}
+
       {/* colour teaser — only when the owner has set colour sets */}
       {swatches.length > 0 && (
         <section className="colourband rv">

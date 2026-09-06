@@ -59,6 +59,7 @@ export default function Dashboard({ services, settings, setServices, setSettings
   ];
   const MANAGE = [
     ["services", "💈", t("servicesPrices")],
+    ["clipins", "🎀", t("tabClipins")],
     ["colors", "🎨", t("colors")],
     ["arrange", "🔃", t("arrange")],
     ["availability", "🕑", t("availability")],
@@ -100,6 +101,7 @@ export default function Dashboard({ services, settings, setServices, setSettings
           {tab === "money" && <Money bookings={bookings} settings={settings} />}
           {tab === "materials" && <MaterialsPanel />}
           {tab === "services" && <ServicesPanel services={services} setServices={setServices} settings={settings} />}
+          {tab === "clipins" && <ClipinsPanel settings={settings} setSettings={setSettings} />}
           {tab === "colors" && <ColorsPanel settings={settings} setSettings={setSettings} />}
           {tab === "arrange" && <ArrangePanel services={services} settings={settings} setSettings={setSettings} />}
           {tab === "availability" && <AvailabilityPanel settings={settings} setSettings={setSettings} />}
@@ -702,6 +704,76 @@ function ColorsPanel({ settings, setSettings }) {
         </div>
       ))}
       {sets.length > 0 && <button className="pink full" style={{ marginTop: 8 }} onClick={save}>{t("save")}</button>}
+    </div>
+  );
+}
+
+// ── Clip-in braids shop (settings.clipins → /clip-ins) ───────────────────
+function ClipItemRow({ it, t, onPatch, onRemove, withHex }) {
+  const ref = useRef(null);
+  const pick = async (e) => {
+    const f = e.target.files?.[0]; e.target.value = "";
+    if (!f) return;
+    try { onPatch({ img: await uploadImage(f) }); } catch (err) { toast("⚠︎"); }
+  };
+  return (
+    <div className="cliprow">
+      <input ref={ref} type="file" accept="image/*" onChange={pick} style={{ display: "none" }} />
+      <button type="button" className="sw-imgbtn" onClick={() => ref.current?.click()}
+        style={it.img ? { backgroundImage: `url(${cldImg(it.img, IMG.swatch)})` } : (withHex ? { background: it.hex || "#333" } : {})}>{!it.img && "＋"}</button>
+      <div className="cliprow-fields">
+        <input value={it.name || ""} onChange={(e) => onPatch({ name: e.target.value })} placeholder={t("nameEnLabel")} dir="ltr" />
+        <input value={it.nameAr || ""} onChange={(e) => onPatch({ nameAr: e.target.value })} placeholder={t("nameArLabel")} dir="rtl" />
+      </div>
+      {withHex && <input type="color" className="clip-hex" value={it.hex || "#1a1a1a"} onChange={(e) => onPatch({ hex: e.target.value })} />}
+      <input className="sw-price" value={it.price || ""} onChange={(e) => onPatch({ price: +e.target.value || 0 })} placeholder={t("pricePh")} inputMode="numeric" />
+      <button className="danger sm" onClick={onRemove}>✕</button>
+    </div>
+  );
+}
+
+function ClipinsPanel({ settings, setSettings }) {
+  const { t } = useLang();
+  const [draft, setDraft] = useState(() =>
+    JSON.parse(JSON.stringify(settings.clipins || { enabled: true, types: [], colors: [], extras: [] })));
+
+  const upd = (key, i, patch) => setDraft((d) => ({ ...d, [key]: d[key].map((x, j) => (j === i ? { ...x, ...patch } : x)) }));
+  const add = (key, extra = {}) => setDraft((d) => ({ ...d, [key]: [...(d[key] || []), { id: uid(), name: "", nameAr: "", price: 0, img: "", ...extra }] }));
+  const rm = (key, i) => setDraft((d) => ({ ...d, [key]: d[key].filter((_, j) => j !== i) }));
+
+  const save = async () => {
+    const cleanList = (list) => (list || [])
+      .filter((x) => ((x.name || "") + (x.nameAr || "")).trim())
+      .map((x) => ({ ...x, name: (x.name || "").trim(), nameAr: (x.nameAr || "").trim(), price: +x.price || 0 }));
+    const clean = { ...draft, types: cleanList(draft.types), colors: cleanList(draft.colors), extras: cleanList(draft.extras) };
+    const ns = { ...settings, clipins: clean };
+    await store.saveSettings(ns); setSettings(ns); setDraft(JSON.parse(JSON.stringify(clean))); toast(t("saved"));
+  };
+
+  const section = (key, title, addLabel, withHex) => (
+    <div className="card" style={{ background: "var(--card-2)" }}>
+      <div className="svcn" style={{ color: "var(--ink)", marginBottom: 6 }}>{title}</div>
+      {(draft[key] || []).map((it, i) => (
+        <ClipItemRow key={it.id} it={it} t={t} withHex={withHex}
+          onPatch={(p) => upd(key, i, p)} onRemove={() => rm(key, i)} />
+      ))}
+      <button className="ghost sm" style={{ marginTop: 10 }} onClick={() => add(key, withHex ? { hex: "#1a1a1a" } : {})}>＋ {addLabel}</button>
+    </div>
+  );
+
+  return (
+    <div className="panelcol">
+      <small className="note" style={{ marginBottom: 4 }}>{t("clipinsHint")}</small>
+      <div className="card glass">
+        <label className="checkrow">
+          <input type="checkbox" checked={!!draft.enabled} onChange={(e) => setDraft((d) => ({ ...d, enabled: e.target.checked }))} />
+          <span>🎀 {t("clipShow")}</span>
+        </label>
+      </div>
+      {section("types", t("clipTypesTitle"), t("addClipType"), false)}
+      {section("colors", t("clipColorsTitle"), t("addClipColor"), true)}
+      {section("extras", t("clipExtrasTitle"), t("addClipExtra"), false)}
+      <button className="pink full" style={{ marginTop: 8 }} onClick={save}>{t("save")}</button>
     </div>
   );
 }
