@@ -35,6 +35,9 @@ function ClipNav({ onOrder }) {
           <button className={lang === "ar" ? "on" : ""} onClick={() => setLang("ar")}>ع</button>
           <button className={lang === "en" ? "on" : ""} onClick={() => setLang("en")}>EN</button>
         </div>
+        <a className="snav-clip" href="/">
+          ✨ <span className="nc-lg">{t("ctaBook")}</span><span className="nc-sm">{t("navBookShort")}</span>
+        </a>
         <button className="snav-book" onClick={onOrder}>{t("clipOrderWa")}</button>
       </div>
     </nav>
@@ -314,11 +317,6 @@ export default function ClipShop() {
               </div>
             )}
 
-            {/* cross-sell back to the booking site */}
-            <div className="clipcross">
-              <p>{t("clipCross")}</p>
-              <a className="findus-btn" href="/">{t("ctaBook")}</a>
-            </div>
           </>
         )}
 

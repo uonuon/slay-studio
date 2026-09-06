@@ -23,10 +23,10 @@ function SiteNav({ onBook }) {
   return (
     <nav className={"snav" + (scrolled ? " scrolled" : "")}>
       <div className="snav-in">
-        <div className="snav-brand">
+        <a className="snav-brand" href="/" style={{ textDecoration: "none" }}>
           <img className="snav-logo" src="/logo-s.png" alt="Slay Studio logo" />
           Slay Studio<span className="dot">.</span>
-        </div>
+        </a>
         <div className="snav-sp" />
         <div className="langtoggle">
           <button className={lang === "ar" ? "on" : ""} onClick={() => setLang("ar")}>ع</button>

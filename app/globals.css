@@ -812,9 +812,6 @@ body:has(.site){background:#0F0B12;display:block;padding:0;overflow-x:clip;}
 .clipbar .btn.wa{flex:0 0 auto;white-space:nowrap;}
 .clipnote{display:block;text-align:center;color:var(--muted);font-size:13px;margin-top:10px;}
 .clipband a.homecta-btn{text-decoration:none;display:inline-block;}
-.clipcross{margin-top:46px;text-align:center;}
-.clipcross p{color:var(--ink-soft);margin:0 0 12px;font-size:15px;}
-.clipcross .findus-btn{display:inline-block;}
 
 /* ── 2026 rebrand: compact scale ("everything smaller" pass) ─────────
    Owner feedback: the old site felt oversized — huge type, huge cards.
@@ -883,8 +880,6 @@ body:has(.site){background:#0F0B12;display:block;padding:0;overflow-x:clip;}
 .clipopt .nm{font-size:12.5px;padding:7px 6px 9px;}
 .clipbar{padding:12px 14px;margin-top:32px;}
 .clipbar-sum{font-size:13.5px;}
-.clipcross{margin-top:34px;}
-.clipcross p{font-size:14px;}
 .guide h1{font-size:clamp(26px,3.6vw,36px);}
 .guide h2{font-size:clamp(19px,2.5vw,24px);}
 .guide p,.glist li{font-size:14px;}
