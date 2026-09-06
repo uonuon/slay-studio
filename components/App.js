@@ -5,6 +5,7 @@ import { firstWorkingDay } from "@/lib/util";
 import { track } from "@/lib/analytics";
 import { useLang, tName } from "@/lib/i18n";
 import Hero from "./Hero";
+import SplitGate from "./SplitGate";
 import TopBar from "./TopBar";
 import Home from "./Home";
 import Booking from "./Booking";
@@ -31,6 +32,9 @@ function SiteNav({ onBook }) {
           <button className={lang === "ar" ? "on" : ""} onClick={() => setLang("ar")}>ع</button>
           <button className={lang === "en" ? "on" : ""} onClick={() => setLang("en")}>EN</button>
         </div>
+        <a className="snav-clip" href="/clip-ins">
+          🎀 <span className="nc-lg">{t("navClip")}</span><span className="nc-sm">{t("navClipShort")}</span>
+        </a>
         <button className="snav-book" onClick={onBook}>{t("ctaBook")}</button>
       </div>
     </nav>
@@ -40,7 +44,10 @@ function SiteNav({ onBook }) {
 export default function App({ seoFooter = null }) {
   const { lang, t } = useLang();
   const [ready, setReady] = useState(false);
-  const [view, setView] = useState("home");
+  // Land on the standalone split gate (clip-ins vs studio); it needs no data
+  // so ad traffic sees it instantly. Falls back to "home" if the clip-ins
+  // shop is turned off in settings.
+  const [view, setView] = useState("gate");
   const [services, setServices] = useState([]);
   const [settings, setSettings] = useState(null);
   const [sel, setSel] = useState({});
@@ -50,8 +57,11 @@ export default function App({ seoFooter = null }) {
     (async () => {
       await store.init();
       setServices(await store.getServices());
-      setSettings(await store.getSettings());
+      const s = await store.getSettings();
+      setSettings(s);
       setReady(true);
+      const gateOk = s?.clipins?.enabled && (s.clipins.types || []).length > 0;
+      if (!gateOk) setView((v) => (v === "gate" ? "home" : v));
     })();
   }, []);
 
@@ -89,14 +99,17 @@ export default function App({ seoFooter = null }) {
       {view === "confirm" && <TopBar onBack={() => setView("home")} />}
 
       <div className="shell">
+        {view === "gate" && (
+          <>
+            <SplitGate onStudio={() => setView("home")} />
+            {/* keep the server-rendered footer (links + JSON-LD) in the
+                initial HTML for crawlers; it sits below the full-height gate */}
+            {seoFooter}
+          </>
+        )}
+
         {view === "home" && (
           <>
-            {/* clip-ins entry — very first thing on the page, above the hero */}
-            {settings?.clipins?.enabled && (settings.clipins.types || []).length > 0 && (
-              <a className="clipribbon" href="/clip-ins">
-                🎀 <b>{t("clipRibbon1")}</b> {t("clipRibbon2")} <span className="rib-arr">→</span>
-              </a>
-            )}
             <Hero onBook={scrollToStyles} />
             {loading ? (
               <div className="skelgrid" key="skel" aria-hidden="true">

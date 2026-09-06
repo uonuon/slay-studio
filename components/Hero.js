@@ -27,7 +27,7 @@ export default function Hero({ onBook }) {
 
       <div className="arch-wrap">
         <div className="arch">
-          <div className="arch-photo" style={{ backgroundImage: "url(/hero-braids.jpg)" }} />
+          <div className="arch-photo" style={{ backgroundImage: "url(/hero-clip.jpg)" }} />
         </div>
         <div className="arch-badge" aria-hidden="true">
           <svg viewBox="0 0 100 100">

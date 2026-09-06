@@ -436,7 +436,7 @@ body:has(.site){background:#0F0B12;display:block;padding:0;overflow-x:clip;}
 .snav{position:sticky;top:0;z-index:50;width:100%;
   background:rgba(15,11,18,.78);backdrop-filter:blur(16px) saturate(1.2);border-bottom:1px solid var(--line);}
 .snav-in{display:flex;align-items:center;gap:12px;max-width:1120px;margin:0 auto;padding:13px var(--pad);}
-.snav-brand{font-family:var(--serif);font-weight:600;font-size:21px;letter-spacing:.2px;color:var(--ink);display:flex;align-items:center;gap:9px;}
+.snav-brand{font-family:var(--serif);font-weight:600;font-size:21px;letter-spacing:.2px;color:var(--ink);display:flex;align-items:center;gap:9px;white-space:nowrap;}
 .snav-brand .dot{color:var(--sage);}
 .snav-logo{height:30px;width:auto;display:block;}
 .sfoot{display:grid;justify-items:center;gap:10px;}
@@ -446,6 +446,20 @@ body:has(.site){background:#0F0B12;display:block;padding:0;overflow-x:clip;}
   background:linear-gradient(135deg,var(--pink),#D1176E);border:none;padding:11px 17px;border-radius:30px;
   box-shadow:0 10px 22px -12px rgba(255,45,135,.7);white-space:nowrap;transition:.2s;}
 .snav-book:hover{transform:translateY(-1px);}
+/* header link to the clip-ins shop — outline pill pairing with the solid book CTA */
+.snav-clip{font-family:var(--sans);font-weight:700;font-size:11px;letter-spacing:1.2px;text-transform:uppercase;color:var(--pink-2);cursor:pointer;
+  background:rgba(255,45,135,.08);border:1px solid rgba(255,45,135,.45);padding:10px 14px;border-radius:30px;white-space:nowrap;transition:.2s;text-decoration:none;}
+.snav-clip:hover{background:rgba(255,45,135,.16);transform:translateY(-1px);}
+[dir="rtl"] .snav-clip{letter-spacing:0;text-transform:none;font-size:13px;}
+.nc-sm{display:none;}
+@media(max-width:600px){
+  .snav-clip{font-size:10px;padding:8px 11px;}
+  .nc-lg{display:none;}
+  .nc-sm{display:inline;}
+}
+@media(max-width:440px){
+  .snav-in{gap:8px;}
+}
 /* light language toggle */
 .site .langtoggle{background:rgba(255,255,255,.06);border-color:var(--line);}
 .site .langtoggle button{color:var(--muted);}
@@ -733,6 +747,36 @@ body:has(.site){background:#0F0B12;display:block;padding:0;overflow-x:clip;}
 .clipribbon:hover{transform:translateY(-1px);box-shadow:var(--shadow);}
 .clipribbon .rib-arr{font-weight:800;color:var(--gold-2);}
 [dir="rtl"] .clipribbon .rib-arr{display:inline-block;transform:scaleX(-1);}
+/* standalone split entry screen (clip-ins vs studio) — first thing on "/" */
+.gatewrap{min-height:100dvh;display:flex;flex-direction:column;padding-bottom:16px;}
+.gate-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;}
+.gate{flex:1;display:grid;grid-template-columns:1fr 1fr;grid-auto-rows:1fr;gap:14px;min-height:0;}
+.gate-panel{position:relative;border-radius:22px;overflow:hidden;display:flex;align-items:flex-end;cursor:pointer;
+  border:1px solid var(--line);box-shadow:var(--shadow);min-height:300px;isolation:isolate;}
+.gate-bg{position:absolute;inset:0;background-size:cover;background-position:50% 25%;transition:transform .8s cubic-bezier(.2,.7,.2,1);}
+.gate-panel:hover .gate-bg{transform:scale(1.05);}
+.gate-panel::after{content:"";position:absolute;inset:0;z-index:1;
+  background:linear-gradient(180deg,rgba(15,11,18,.06) 34%,rgba(15,11,18,.9) 86%);}
+.gate-panel:hover{border-color:rgba(255,45,135,.5);}
+.gate-copy{position:relative;z-index:2;padding:20px 22px 22px;display:grid;gap:7px;justify-items:start;}
+.gate-kicker{font-size:10.5px;letter-spacing:2px;text-transform:uppercase;color:var(--gold-2);font-weight:800;}
+[dir="rtl"] .gate-kicker{letter-spacing:0;text-transform:none;font-size:12.5px;}
+.gate-title{font-family:var(--serif);font-weight:500;font-size:clamp(21px,2.5vw,29px);color:#fff;margin:0;line-height:1.12;letter-spacing:-.3px;text-wrap:balance;}
+.gate-sub{font-size:13px;color:#D9CBD6;margin:0;max-width:40ch;line-height:1.55;}
+.gate-btn{margin-top:7px;display:inline-block;background:linear-gradient(135deg,var(--pink),#D1176E);color:#fff;border:none;border-radius:999px;
+  padding:11px 19px;font-family:var(--sans);font-weight:700;font-size:13px;cursor:pointer;text-decoration:none;
+  box-shadow:0 14px 28px -14px rgba(255,45,135,.9);transition:.2s;}
+.gate-btn:hover{transform:translateY(-1px);}
+.gate-arr{display:inline-block;font-weight:800;}
+[dir="rtl"] .gate-arr{transform:scaleX(-1);}
+@media(max-width:760px){
+  .gate{grid-template-columns:1fr;gap:11px;}
+  .gate-panel{min-height:0;}
+  .gate-copy{padding:14px 15px 16px;}
+  .gate-sub{font-size:12px;max-width:none;}
+  .gate-title{font-size:20px;}
+}
+
 .cliphead{max-width:660px;padding:36px 0 4px;}
 .cliphead .h1{font-size:clamp(32px,4.6vw,52px);}
 .clipshop .clip-step{margin-top:36px;scroll-margin-top:80px;}
@@ -1227,6 +1271,12 @@ html:has(.site){scroll-behavior:smooth;}
 }
 @media(max-width:380px){
   .skelgrid{grid-template-columns:1fr;}
+}
+
+/* very narrow phones: brand collapses to the S mark so nav buttons fit
+   (lives after the type-scale block so it actually wins the cascade) */
+@media(max-width:400px){
+  .snav-brand{font-size:0;gap:0;}
 }
 
 /* ── reduced motion: everything appears instantly ──── */
