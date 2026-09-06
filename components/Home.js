@@ -9,11 +9,11 @@ import { useLang, laneLabel, tName } from "@/lib/i18n";
 // (AggregateRating JSON-LD moved server-side into components/SeoSections.js
 // so non-JS crawlers see it too — one HairSalon entity, no duplicates.)
 
-// warm placeholder gradient per lane (used until a style photo is uploaded)
+// dark placeholder gradient per lane (used until a style photo is uploaded)
 const LANE_GRAD = {
-  "Slay Studio": "linear-gradient(150deg,#9aa385,#6E7B58)",
-  "Little Slays": "linear-gradient(150deg,#d9b3ad,#bb8478)",
-  "Signature": "linear-gradient(150deg,#c9a36a,#a9803f)",
+  "Slay Studio": "linear-gradient(150deg,#3A1F42,#22132B)",
+  "Little Slays": "linear-gradient(150deg,#4A1B3C,#2A1226)",
+  "Signature": "linear-gradient(150deg,#3C1530,#1E0F1E)",
 };
 
 export default function Home({ services, settings, onPick, mode = "studio", setMode }) {

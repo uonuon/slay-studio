@@ -13,12 +13,12 @@ import { cldImg, IMG } from "@/lib/img";
 import { useLang, biName } from "@/lib/i18n";
 import Lightbox from "./Lightbox";
 
-// warm placeholder gradients rotated across type cards until photos are uploaded
+// dark placeholder gradients rotated across type cards until photos are uploaded
 const TYPE_GRADS = [
-  "linear-gradient(150deg,#9aa385,#6E7B58)",
-  "linear-gradient(150deg,#c9a36a,#a9803f)",
-  "linear-gradient(150deg,#d9b3ad,#bb8478)",
-  "linear-gradient(150deg,#b0a18b,#8c7c6c)",
+  "linear-gradient(150deg,#3A1F42,#22132B)",
+  "linear-gradient(150deg,#4A1B3C,#2A1226)",
+  "linear-gradient(150deg,#3C1530,#1E0F1E)",
+  "linear-gradient(150deg,#2C1B3E,#191223)",
 ];
 
 function ClipNav({ onOrder }) {
