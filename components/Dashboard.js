@@ -709,6 +709,12 @@ function ColorsPanel({ settings, setSettings }) {
 }
 
 // ── Clip-in braids shop (settings.clipins → /clip-ins) ───────────────────
+// Swatch preview: solid hex, or an ombré gradient when hex2/hex3 are set
+const clipSwatchBg = (it) => {
+  const stops = [it.hex, it.hex2, it.hex3].filter(Boolean);
+  return stops.length > 1 ? `linear-gradient(180deg, ${stops.join(", ")})` : stops[0] || "#333";
+};
+
 function ClipItemRow({ it, t, onPatch, onRemove, withHex }) {
   const ref = useRef(null);
   const pick = async (e) => {
@@ -720,12 +726,28 @@ function ClipItemRow({ it, t, onPatch, onRemove, withHex }) {
     <div className="cliprow">
       <input ref={ref} type="file" accept="image/*" onChange={pick} style={{ display: "none" }} />
       <button type="button" className="sw-imgbtn" onClick={() => ref.current?.click()}
-        style={it.img ? { backgroundImage: `url(${cldImg(it.img, IMG.swatch)})` } : (withHex ? { background: it.hex || "#333" } : {})}>{!it.img && "＋"}</button>
+        style={it.img ? { backgroundImage: `url(${cldImg(it.img, IMG.swatch)})` } : (withHex ? { background: clipSwatchBg(it) } : {})}>{!it.img && "＋"}</button>
       <div className="cliprow-fields">
         <input value={it.name || ""} onChange={(e) => onPatch({ name: e.target.value })} placeholder={t("nameEnLabel")} dir="ltr" />
         <input value={it.nameAr || ""} onChange={(e) => onPatch({ nameAr: e.target.value })} placeholder={t("nameArLabel")} dir="rtl" />
       </div>
-      {withHex && <input type="color" className="clip-hex" value={it.hex || "#1a1a1a"} onChange={(e) => onPatch({ hex: e.target.value })} />}
+      {withHex && (
+        <div className="hexstops">
+          <input type="color" className="clip-hex" value={it.hex || "#1a1a1a"} onChange={(e) => onPatch({ hex: e.target.value })} />
+          {it.hex2
+            ? <span className="hexstop">
+                <input type="color" className="clip-hex" value={it.hex2} onChange={(e) => onPatch({ hex2: e.target.value })} />
+                {!it.hex3 && <button type="button" className="hex-x" onClick={() => onPatch({ hex2: "", hex3: "" })}>✕</button>}
+              </span>
+            : <button type="button" className="hex-add" title="ombré" onClick={() => onPatch({ hex2: "#777777" })}>＋</button>}
+          {it.hex2 && (it.hex3
+            ? <span className="hexstop">
+                <input type="color" className="clip-hex" value={it.hex3} onChange={(e) => onPatch({ hex3: e.target.value })} />
+                <button type="button" className="hex-x" onClick={() => onPatch({ hex3: "" })}>✕</button>
+              </span>
+            : <button type="button" className="hex-add" title="ombré +" onClick={() => onPatch({ hex3: "#bbbbbb" })}>＋</button>)}
+        </div>
+      )}
       <input className="sw-price" value={it.price || ""} onChange={(e) => onPatch({ price: +e.target.value || 0 })} placeholder={t("pricePh")} inputMode="numeric" />
       <button className="danger sm" onClick={onRemove}>✕</button>
     </div>

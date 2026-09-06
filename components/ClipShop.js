@@ -104,7 +104,13 @@ function TypeCard({ g, on, idx, onPick, onZoom }) {
   );
 }
 
-// Photo tile for a color or an extra (falls back to hex block / 🎀)
+// Solid or ombré swatch background from a color's hex stops
+const swatchBg = (c) => {
+  const stops = [c.hex, c.hex2, c.hex3].filter(Boolean);
+  return stops.length > 1 ? `linear-gradient(180deg, ${stops.join(", ")})` : stops[0] || "#666";
+};
+
+// Photo tile for a color or an extra (falls back to hex/ombré swatch / 🎀)
 function OptTile({ it, on, onPick, t }) {
   const { lang } = useLang();
   return (
@@ -112,7 +118,7 @@ function OptTile({ it, on, onPick, t }) {
       {it.img
         ? <span className="im" style={{ backgroundImage: `url(${cldImg(it.img, IMG.thumb)})` }} />
         : it.hex
-          ? <span className="im" style={{ background: it.hex }} />
+          ? <span className="im" style={{ background: swatchBg(it) }} />
           : <span className="im ph2">🎀</span>}
       <span className="nm">
         {on ? "✓ " : ""}{biName(it, lang)}
@@ -121,6 +127,20 @@ function OptTile({ it, on, onPick, t }) {
     </button>
   );
 }
+
+// Compact named swatch chip (photo-less colors) — the dot shows the solid
+// shade or the ombré gradient of the actual pack
+function ColorChip({ c, on, onPick, dotBg, children }) {
+  return (
+    <button type="button" className={"sw" + (on ? " on" : "")} onClick={() => onPick(c)}>
+      <span className="sw-dot" style={{ background: dotBg || swatchBg(c) }} />
+      <span className="sw-name">{children}</span>
+    </button>
+  );
+}
+
+// sentinel for "any other color — decided in the WhatsApp chat"
+const ASK_COLOR = { id: "ask", ask: true };
 
 export default function ClipShop() {
   const { lang, t } = useLang();
@@ -175,7 +195,7 @@ export default function ClipShop() {
     if (colors.length && !color) return toast(t("clipPickColor"));
     const msg = t("waClip", {
       type: biName(type, lang),
-      color: color ? biName(color, lang) : "—",
+      color: color ? (color.ask ? t("clipColorAskMsg") : biName(color, lang)) : "—",
       extras: chosen.length ? chosen.map((x) => biName(x, lang)).join(" + ") : t("clipNone"),
       total: showTotal ? "\n• " + t("clipTotalLine", { n: total.toLocaleString() }) : "",
     });
@@ -237,10 +257,26 @@ export default function ClipShop() {
                   <h2 className="lane2-title">{t("clipStep2")}</h2>
                   <span className="lane2-line" />
                 </div>
-                <div className="clipopts">
-                  {colors.map((c) => (
-                    <OptTile key={c.id} it={c} on={color?.id === c.id} onPick={pickColor} t={t} />
+                {/* colors WITH a real photo show as big tiles; the rest as
+                    named swatch chips (ombrés render their gradient) */}
+                {colors.some((c) => c.img) && (
+                  <div className="clipopts" style={{ marginBottom: 14 }}>
+                    {colors.filter((c) => c.img).map((c) => (
+                      <OptTile key={c.id} it={c} on={color?.id === c.id} onPick={pickColor} t={t} />
+                    ))}
+                  </div>
+                )}
+                <div className="swatches">
+                  {colors.filter((c) => !c.img).map((c) => (
+                    <ColorChip key={c.id} c={c} on={color?.id === c.id} onPick={pickColor}>
+                      {color?.id === c.id ? "✓ " : ""}{biName(c, lang)}
+                      {+c.price > 0 ? <span className="sw-add"> +{(+c.price).toLocaleString()}</span> : null}
+                    </ColorChip>
                   ))}
+                  <ColorChip c={ASK_COLOR} on={color?.id === "ask"} onPick={pickColor}
+                    dotBg="conic-gradient(#E23A8E,#E9D5A4,#187055,#1F4FA3,#6E3AA7,#E23A8E)">
+                    {color?.id === "ask" ? "✓ " : ""}🎨 {t("clipMoreColors")}
+                  </ColorChip>
                 </div>
               </section>
             )}
@@ -268,7 +304,7 @@ export default function ClipShop() {
                 <div className="clipbar">
                   <div className="clipbar-sum">
                     <b>{biName(type, lang)}</b>
-                    {color ? <> · {biName(color, lang)}</> : null}
+                    {color ? <> · {color.ask ? "🎨 " + t("clipColorAskShort") : biName(color, lang)}</> : null}
                     {chosen.length > 0 ? <> · {chosen.map((x) => biName(x, lang)).join(" + ")}</> : null}
                     {showTotal ? <span className="clipbar-total"> · {total.toLocaleString()} {t("egp")}</span> : null}
                   </div>
