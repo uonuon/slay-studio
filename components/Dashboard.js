@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { USE_FB } from "@/lib/firebase";
 import { LANES } from "@/lib/config";
 import { store } from "@/lib/store";
-import { todayStr, dstr, uid, waLink, toast, groupKey, groupStyles, normPhone, copyToClipboard } from "@/lib/util";
+import { todayStr, dstr, uid, waLink, toast, groupKey, groupStyles, normPhone, copyToClipboard, isBlockedAt } from "@/lib/util";
 import { uploadImage, cldImg, IMG } from "@/lib/img";
 import { useLang, fmtDateL, tName, dayShort, laneLabel, fmtTime } from "@/lib/i18n";
 import { messageTemplates, bookingTemplates, fillTemplate } from "@/lib/messageTemplates";
@@ -143,6 +143,7 @@ function BookingCard({ b, settings, services = [], setStatus, onChanged }) {
   const saveEdit = async () => {
     if (!/^\d{1,2}:\d{2}$/.test(time.trim())) return toast(t("timeFmt"));
     const s = services.find((x) => x.id === svId);
+    if (isBlockedAt(settings, date, time.trim(), s ? s.dur : b.dur)) return toast(t("blockedTime"));
     const nb = { ...b, date, start: time.trim(), ...(s ? { serviceId: s.id, serviceName: s.name, price: s.price, dur: s.dur } : {}) };
     await store.updateBooking(nb);
     setEditing(false); toast(t("saved"));
@@ -238,7 +239,7 @@ function Schedule({ bookings, settings, services, openAdd, setOpenAdd, setStatus
       <div className="sched-top">
         <button className="pink" onClick={() => setOpenAdd(!openAdd)}>{t("addBooking")}</button>
       </div>
-      {openAdd && <div className="panelcol"><AddForm services={services} onAdded={() => { setOpenAdd(false); onAdded(); }} /></div>}
+      {openAdd && <div className="panelcol"><AddForm services={services} settings={settings} onAdded={() => { setOpenAdd(false); onAdded(); }} /></div>}
 
       <div className="cal">
         <div className="cal-head">
@@ -286,7 +287,7 @@ function Schedule({ bookings, settings, services, openAdd, setOpenAdd, setStatus
   );
 }
 
-function AddForm({ services, onAdded }) {
+function AddForm({ services, settings, onAdded }) {
   const { lang, t } = useLang();
   const [svId, setSvId] = useState(services[0]?.id || "");
   const [date, setDate] = useState(todayStr());
@@ -301,6 +302,7 @@ function AddForm({ services, onAdded }) {
     const s = services.find((x) => x.id === svId);
     if (!s) return;
     if (!/^\d{1,2}:\d{2}$/.test(time.trim())) return toast(t("timeFmt"));
+    if (isBlockedAt(settings, date, time.trim(), s.dur)) return toast(t("blockedTime"));
     const b = {
       id: uid(), serviceId: s.id, serviceName: s.name,
       price: home ? (+customPrice || 0) : s.price, dur: s.dur,
