@@ -110,7 +110,7 @@ export default function App({ seoFooter = null }) {
 
         {view === "home" && (
           <>
-            <Hero onBook={scrollToStyles} />
+            <Hero onBook={scrollToStyles} depositPct={settings?.depositPct} />
             {loading ? (
               <div className="skelgrid" key="skel" aria-hidden="true">
                 {Array.from({ length: 6 }).map((_, i) => <div key={i} className="scard-skel" style={{ "--i": i }} />)}

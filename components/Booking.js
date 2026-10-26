@@ -24,15 +24,19 @@ export default function Booking({ sel, setSel, settings, onBack, onBooked }) {
   const [zoom, setZoom] = useState(null);
   const [promoInput, setPromoInput] = useState("");
   const [addr, setAddr] = useState("");
+  const [noExt, setNoExt] = useState(false); // "without extensions" — only offered when the owner set that price
+  const [agree, setAgree] = useState(false); // booking policy accepted
 
   const colors = useMemo(() => {
     if (!settings.colorsEnabled) return [];                 // colour feature off → no picker / no add-on
     const cs = (settings.colorSets || []).find((c) => c.id === service?.colorSet);
     return cs?.colors || [];
   }, [service, settings.colorSets, settings.colorsEnabled]);
-  useEffect(() => { setColor(null); }, [service]);
+  useEffect(() => { setColor(null); setNoExt(false); }, [service]);
   const promo = useMemo(() => findPromo(settings, promoInput), [settings, promoInput]);
-  const base = (service?.price || 0) + (color?.price || 0);
+  const canNoExt = home ? +service?.homeNoExtPrice > 0 : +service?.noExtPrice > 0;
+  const studioPrice = noExt && canNoExt ? +service.noExtPrice : (service?.price || 0);
+  const base = studioPrice + (color?.price || 0);
   const total = applyPromo(base, promo);
 
   // 28-day strip
@@ -65,10 +69,12 @@ export default function Booking({ sel, setSel, settings, onBack, onBooked }) {
     if (colors.length && !color) return toast(t("pickColorFirst"));
     if (!start) return toast(t("pickTimeFirst"));
     if (!name.trim() || !phone.trim()) return toast(t("addNamePhone"));
+    if (!agree) return toast(t("policyFirst"));
     const b = {
       id: uid(), serviceId: service.id, serviceName: service.name, price: total, dur: service.dur,
       color: color?.name || "", colorHex: color?.hex || "",
       promoCode: promo?.code || "", discountPct: promo?.pct || 0,
+      noExt: noExt && canNoExt, policyAccepted: true,
       date, start, clientName: name.trim(), clientPhone: phone.trim(), status: "pending", createdAt: Date.now(),
     };
     // Persist without the (heavy) image; pass it to the confirm screen in memory only.
@@ -84,7 +90,7 @@ export default function Booking({ sel, setSel, settings, onBack, onBooked }) {
   const submitHome = () => {
     if (!name.trim() || !phone.trim()) return toast(t("addNamePhone"));
     if (!addr.trim()) return toast(t("addAddress"));
-    const svcName = tName(service.name, lang);
+    const svcName = tName(service.name, lang) + (noExt && canNoExt ? " · " + t("noExt") : "");
     const msg = t("waHome", {
       service: svcName, price: homePrice > 0 ? ` — ${homePrice.toLocaleString()} ${t("egp")}` : "",
       date: fmtDateL(date, lang), address: addr.trim(),
@@ -107,7 +113,7 @@ export default function Booking({ sel, setSel, settings, onBack, onBooked }) {
   const lo = Math.min(...prices), hi = Math.max(...prices);
   // home-service prices (owner-set, separate from studio price); may be unset (0)
   const homePrices = group.opts.map((o) => +o.homePrice || 0).filter((p) => p > 0);
-  const homePrice = +service?.homePrice || 0;
+  const homePrice = noExt && canNoExt ? +service.homeNoExtPrice : (+service?.homePrice || 0);
   const homePriceLabel = service
     ? (homePrice > 0 ? homePrice.toLocaleString() : "")
     : (homePrices.length ? (Math.min(...homePrices) === Math.max(...homePrices) ? Math.min(...homePrices).toLocaleString() : Math.min(...homePrices).toLocaleString() + "+") : "");
@@ -160,6 +166,20 @@ export default function Booking({ sel, setSel, settings, onBack, onBooked }) {
               >
                 <div className="cs">{tVariant(o, lang)}</div>
                 <div className="cp">{home ? (+o.homePrice ? `${(+o.homePrice).toLocaleString()} · ${hrs(o.dur)}h` : `${hrs(o.dur)}h`) : `${o.price.toLocaleString()} · ${hrs(o.dur)}h`}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {service && canNoExt && (
+        <div className="card">
+          <label>{t("extLabel")}</label>
+          <div className="chips">
+            {[[false, t("withExt"), home ? +service.homePrice : service.price], [true, t("noExt"), home ? +service.homeNoExtPrice : +service.noExtPrice]].map(([v, lab, p]) => (
+              <div key={lab} className={"chip" + (noExt === v ? " on" : "")} onClick={() => setNoExt(v)}>
+                <div className="cs">{lab}</div>
+                <div className="cp">{p > 0 ? `${p.toLocaleString()} ${t("egp")}` : t("priceAfterChat")}</div>
               </div>
             ))}
           </div>
@@ -285,8 +305,20 @@ export default function Booking({ sel, setSel, settings, onBack, onBooked }) {
                     : <div className="promo-bad">{t("promoInvalid")}</div>
                 )}
               </div>
-              <button className="pink full" style={{ marginTop: 15 }} onClick={submit}>{t("confirmBooking")}</button>
-              <small className="note">{t("depositNote")}</small>
+              <div className="policy-box">
+                <div className="policy-title">{t("policyTitle")}</div>
+                <ul>
+                  <li>{t("policy1")}</li>
+                  <li>{t("policy2")}</li>
+                  <li>{t("policy3")}</li>
+                </ul>
+                <label className="checkrow">
+                  <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} />
+                  <span>{t("policyAgree")}</span>
+                </label>
+              </div>
+              <button className={"pink full" + (agree ? "" : " is-off")} style={{ marginTop: 15 }} onClick={submit}>{t("confirmBooking")}</button>
+              <small className="note">{t("depositNote", { pct: settings.depositPct })}</small>
             </div>
           )}
         </>

@@ -126,7 +126,7 @@ function BookingCard({ b, settings, services = [], setStatus, onChanged }) {
   const { lang, t } = useLang();
   const dep = Math.round((b.price * settings.depositPct) / 100);
   const dateStr = fmtDateL(b.date, lang);
-  const svcName = tName(b.serviceName, lang) + (b.color ? " · " + b.color : "");
+  const svcName = tName(b.serviceName, lang) + (b.noExt ? " · " + t("noExt") : "") + (b.color ? " · " + b.color : "");
   const conf = t("waConfirm", { name: b.clientName, service: svcName, date: dateStr, time: fmtTime(b.start, lang), dep: dep.toLocaleString(), ip: settings.instapay });
   const rem = t("waRemind", { name: b.clientName, service: svcName, date: dateStr, time: fmtTime(b.start, lang) });
   const editable = b.status !== "done" && b.status !== "cancelled";
@@ -144,7 +144,7 @@ function BookingCard({ b, settings, services = [], setStatus, onChanged }) {
     if (!/^\d{1,2}:\d{2}$/.test(time.trim())) return toast(t("timeFmt"));
     const s = services.find((x) => x.id === svId);
     if (isBlockedAt(settings, date, time.trim(), s ? s.dur : b.dur)) return toast(t("blockedTime"));
-    const nb = { ...b, date, start: time.trim(), ...(s ? { serviceId: s.id, serviceName: s.name, price: s.price, dur: s.dur } : {}) };
+    const nb = { ...b, date, start: time.trim(), ...(s ? { serviceId: s.id, serviceName: s.name, price: b.noExt && +s.noExtPrice ? +s.noExtPrice : s.price, dur: s.dur } : {}) };
     await store.updateBooking(nb);
     setEditing(false); toast(t("saved"));
     onChanged && onChanged();
@@ -863,13 +863,15 @@ function ServiceRow({ s, setServices, settings }) {
   const [desc, setDesc] = useState(s.description || "");
   const [homeOk, setHomeOk] = useState(!!s.homeOk);
   const [homePrice, setHomePrice] = useState(s.homePrice || "");
+  const [noExtPrice, setNoExtPrice] = useState(s.noExtPrice || "");
+  const [homeNoExtPrice, setHomeNoExtPrice] = useState(s.homeNoExtPrice || "");
   const [busy, setBusy] = useState(false);
   const img = s.img;
 
   const save = async () => {
     const origGroup = groupKey(s);
     const description = desc.trim();
-    await store.saveService({ ...s, lane, group: group.trim(), name: name.trim(), price: +price, dur: +dur, colorSet, description, homeOk, homePrice: +homePrice || 0 });
+    await store.saveService({ ...s, lane, group: group.trim(), name: name.trim(), price: +price, dur: +dur, colorSet, description, homeOk, homePrice: +homePrice || 0, noExtPrice: +noExtPrice || 0, homeNoExtPrice: +homeNoExtPrice || 0 });
     // a style's section, color set + description apply to all its size variants together
     const all = await store.getServices();
     for (const x of all) {
@@ -924,6 +926,9 @@ function ServiceRow({ s, setServices, settings }) {
             <div><label>{t("priceLab")}</label><input value={price} onChange={(e) => setPrice(e.target.value)} /></div>
             <div><label>{t("minLab")}</label><input value={dur} onChange={(e) => setDur(e.target.value)} /></div>
           </div>
+          <label style={{ marginTop: 10, display: "block" }}>{t("noExtPriceLabel")}</label>
+          <input value={noExtPrice} onChange={(e) => setNoExtPrice(e.target.value)} inputMode="numeric" placeholder={t("priceLab")} />
+          <small className="note">{t("noExtHint")}</small>
           <label className="checkrow">
             <input type="checkbox" checked={homeOk} onChange={(e) => setHomeOk(e.target.checked)} />
             <span>🏠 {t("homeOkLabel")}</span>
@@ -932,6 +937,8 @@ function ServiceRow({ s, setServices, settings }) {
             <>
               <label style={{ marginTop: 10, display: "block" }}>{t("homePriceLabel")}</label>
               <input value={homePrice} onChange={(e) => setHomePrice(e.target.value)} inputMode="numeric" placeholder={t("priceLab")} />
+              <label style={{ marginTop: 10, display: "block" }}>{t("homeNoExtPriceLabel")}</label>
+              <input value={homeNoExtPrice} onChange={(e) => setHomeNoExtPrice(e.target.value)} inputMode="numeric" placeholder={t("priceLab")} />
             </>
           )}
           <input ref={inputRef} type="file" accept="image/*" onChange={onPhoto} style={{ display: "none" }} />
@@ -960,6 +967,8 @@ function AddService({ services, setServices, settings, onDone }) {
   const [img, setImg] = useState("");
   const [homeOk, setHomeOk] = useState(false);
   const [homePrice, setHomePrice] = useState("");
+  const [noExtPrice, setNoExtPrice] = useState("");
+  const [homeNoExtPrice, setHomeNoExtPrice] = useState("");
   const [busy, setBusy] = useState(false);
   const existing = [...new Set(services.map(groupKey))];
 
@@ -971,9 +980,9 @@ function AddService({ services, setServices, settings, onDone }) {
   };
   const add = async () => {
     if (!group.trim() || !name.trim() || !price) return toast(t("catNamePrice"));
-    await store.addService({ id: uid(), lane, group: group.trim(), name: name.trim(), price: +price, dur: +dur || 120, img, colorSet, description: desc.trim(), homeOk, homePrice: +homePrice || 0 });
+    await store.addService({ id: uid(), lane, group: group.trim(), name: name.trim(), price: +price, dur: +dur || 120, img, colorSet, description: desc.trim(), homeOk, homePrice: +homePrice || 0, noExtPrice: +noExtPrice || 0, homeNoExtPrice: +homeNoExtPrice || 0 });
     setServices(await store.getServices());
-    setGroup(""); setName(""); setPrice(""); setDur(""); setImg(""); setColorSet(""); setDesc(""); setHomeOk(false); setHomePrice("");
+    setGroup(""); setName(""); setPrice(""); setDur(""); setImg(""); setColorSet(""); setDesc(""); setHomeOk(false); setHomePrice(""); setNoExtPrice(""); setHomeNoExtPrice("");
     toast(t("saved")); onDone && onDone();
   };
 
@@ -991,6 +1000,7 @@ function AddService({ services, setServices, settings, onDone }) {
         <input value={price} onChange={(e) => setPrice(e.target.value)} placeholder={t("pricePh")} />
         <input value={dur} onChange={(e) => setDur(e.target.value)} placeholder={t("minutesPh")} />
       </div>
+      <input value={noExtPrice} onChange={(e) => setNoExtPrice(e.target.value)} inputMode="numeric" placeholder={t("noExtPriceLabel")} style={{ marginTop: 8 }} />
       <label style={{ marginTop: 10, display: "block" }}>{t("section")}</label>
       <select value={lane} onChange={(e) => setLane(e.target.value)}>
         {LANES.map((l) => <option key={l} value={l}>{laneLabel(l, lang, "full")}</option>)}
@@ -1006,6 +1016,9 @@ function AddService({ services, setServices, settings, onDone }) {
       </label>
       {homeOk && (
         <input value={homePrice} onChange={(e) => setHomePrice(e.target.value)} inputMode="numeric" placeholder={t("homePriceLabel")} style={{ marginTop: 8 }} />
+      )}
+      {homeOk && (
+        <input value={homeNoExtPrice} onChange={(e) => setHomeNoExtPrice(e.target.value)} inputMode="numeric" placeholder={t("homeNoExtPriceLabel")} style={{ marginTop: 8 }} />
       )}
       <input ref={inputRef} type="file" accept="image/*" onChange={onPhoto} style={{ display: "none" }} />
       <div className="acts" style={{ marginTop: 10, alignItems: "center" }}>
@@ -1105,7 +1118,7 @@ function ClientCard({ c, note, onSave, lang, t }) {
         <div style={{ marginTop: 8 }}>
           {c.history.map((b) => (
             <div key={b.id} className="meta" style={{ padding: "5px 0", borderTop: "1px solid var(--line)" }}>
-              {fmtDateL(b.date, lang)} · {tName(b.serviceName, lang)} · {b.price.toLocaleString()} {t("egp")}
+              {fmtDateL(b.date, lang)} · {tName(b.serviceName, lang)}{b.noExt ? " · " + t("noExt") : ""} · {b.price.toLocaleString()} {t("egp")}
             </div>
           ))}
         </div>

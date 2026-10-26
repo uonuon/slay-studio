@@ -16,7 +16,7 @@ export default function Confirm({ booking, settings, onHome }) {
   const b = booking;
   const dep = Math.round((b.price * settings.depositPct) / 100);
   const dateStr = fmtDateL(b.date, lang);
-  const svcName = tName(b.serviceName, lang) + (b.color ? " · " + b.color : "");
+  const svcName = tName(b.serviceName, lang) + (b.noExt ? " · " + t("noExt") : "") + (b.color ? " · " + b.color : "");
   const msg = t("waClient", {
     service: svcName, date: dateStr, time: fmtTime(b.start, lang), name: b.clientName, dep: dep.toLocaleString(),
   });
@@ -50,7 +50,7 @@ export default function Confirm({ booking, settings, onHome }) {
       <div className="card deposit">
         <div className="eyebrow">{t("depositTitle")}</div>
         <div className="depbig">{dep.toLocaleString()} <span>{t("egp")}</span></div>
-        <p>{t("depositPara", { dep: dep.toLocaleString(), ip: settings.instapay })}</p>
+        <p>{t("depositPara", { dep: dep.toLocaleString(), ip: settings.instapay, pct: settings.depositPct })}</p>
 
         {settings.instapayUrl && (
           <a className="btn ip-pay full" href={settings.instapayUrl} target="_blank" rel="noopener noreferrer">

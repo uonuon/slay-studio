@@ -1266,3 +1266,12 @@ html:has(.site){scroll-behavior:smooth;}
   .hero2 .eyebrow2,.hero2 .h1,.hero2 .lede2,.hero2 .cta-row,.hero2 .trust2,.arch-wrap{opacity:1 !important;}
   .site .check path{stroke-dashoffset:0;}
 }
+
+/* ---------- booking policy (accepted before the deposit step) ---------- */
+.site .policy-box{margin-top:14px;padding:12px 14px;border:1px solid rgba(255,45,135,.35);border-radius:12px;background:rgba(255,45,135,.06);}
+.site .policy-title{font-weight:700;font-size:13px;color:var(--ink);margin-bottom:6px;}
+.site .policy-box ul{margin:0 0 10px;padding-inline-start:18px;font-size:12.5px;line-height:1.55;color:var(--ink-2,rgba(245,238,243,.75));}
+.site .policy-box li{margin:2px 0;}
+.site .policy-box .checkrow{font-size:13px;text-transform:none;letter-spacing:normal;margin:0;}
+.site .policy-box .checkrow input[type=checkbox]{accent-color:#FF2D87;}
+.site button.is-off{opacity:.5;}

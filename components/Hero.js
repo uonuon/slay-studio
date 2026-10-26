@@ -3,7 +3,7 @@ import { useLang } from "@/lib/i18n";
 
 // Editorial light hero for the home screen. The curated braids photo fills the
 // arch (kept stable — not swapped for owner style thumbnails).
-export default function Hero({ onBook }) {
+export default function Hero({ onBook, depositPct = 20 }) {
   const { t } = useLang();
 
   return (
@@ -21,7 +21,7 @@ export default function Hero({ onBook }) {
         <div className="trust2">
           <span className="chip2"><span className="t2-stars">★★★★★</span> <b>4.9</b></span>
           <span className="chip2">{t("chipHealthy")}</span>
-          <span className="chip2">{t("chipDeposit")}</span>
+          <span className="chip2">{t("chipDeposit", { pct: depositPct })}</span>
         </div>
       </div>
 
